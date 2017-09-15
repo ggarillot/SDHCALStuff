@@ -5,7 +5,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.6 FATAL_ERROR)
 ########################################################
 
 # project name
-PROJECT( Minimisation )
+PROJECT( SDHCALStuff )
 
 ### DEPENDENCIES ############################################################
 
@@ -41,7 +41,7 @@ file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.h)
 add_library( MyLib ${sources} ${headers} )
 
 
-file( GLOB APP_SOURCES ${PROJECT_SOURCE_DIR}/src/*.cxx )
+file( GLOB APP_SOURCES ${PROJECT_SOURCE_DIR}/exec/*.cxx )
 foreach( testsourcefile ${APP_SOURCES} )
 	get_filename_component(testname ${testsourcefile} NAME_WE)
 	add_executable( ${testname} ${testsourcefile} )

@@ -43,7 +43,7 @@ class HistoCreator
 
 	protected :
 
-		std::vector<Event> eventList ;
+		std::vector<Event> eventList {} ;
 		TColor* color = gROOT->GetColor(kBlack) ;
 		TColor* fillColor = gROOT->GetColor(kBlack) ;
 		bool dataStyle = false ;

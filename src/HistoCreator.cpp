@@ -3,7 +3,6 @@
 #include <iostream>
 
 HistoCreator::HistoCreator()
-	: eventList()
 {
 }
 
