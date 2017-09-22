@@ -13,8 +13,6 @@
 struct Event
 {
 		Event() ;
-//		Event(const Event &eventToCopy) ;
-//		~Event() ;
 
 		float energy = 0 ;
 		int nHit = 0 ;
@@ -25,6 +23,11 @@ struct Event
 		int nHough1 = 0 ;
 		int nHough2 = 0 ;
 		int nHough3 = 0 ;
+
+		float nHitCustom = 0 ;
+		float nHit1Custom = 0 ;
+		float nHit2Custom = 0 ;
+		float nHit3Custom = 0 ;
 
 		double density = 0 ;
 
@@ -38,8 +41,8 @@ struct Event
 
 		float cog[4] = {0,0,0,0} ;
 
-		std::vector<double> longiProfile ;
-		std::vector<double> radiProfile ;
+		std::vector<double> longiProfile = {} ;
+		std::vector<double> radiProfile = {} ;
 
 		ULong64_t spillEventTime = 0 ;
 
@@ -67,7 +70,6 @@ class EventReader
 	protected :
 		TTree* tree = nullptr ;
 
-
 	protected :
 		float energy = 0 ;
 		int nHit = 0 ;
@@ -78,6 +80,11 @@ class EventReader
 		int nHough1 = 0 ;
 		int nHough2 = 0 ;
 		int nHough3 = 0 ;
+
+		float nHitCustom = 0 ;
+		float nHit1Custom = 0 ;
+		float nHit2Custom = 0 ;
+		float nHit3Custom = 0 ;
 
 		double density = 0 ;
 
@@ -97,7 +104,6 @@ class EventReader
 		ULong64_t spillEventTime = 0 ;
 
 		double emFraction = 0 ;
-
 } ;
 
 

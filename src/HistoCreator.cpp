@@ -121,11 +121,16 @@ double HistoCreator::getMeanRadius() const
 	return meanRadius ;
 }
 
-TH1D* HistoCreator::getNHit(std::string histName) const
+TH1D* HistoCreator::getNHit(std::string histName , int thr , bool custom) const
 {
+	int nBins = 70 ;
 	int max = static_cast<int>( eventList.at(0).energy*20 + 300 ) ;
 
-	TH1D* histo = new TH1D( histName.c_str() , "" , 100 , 0 , max) ;
+	double perBin = 1.0*max/nBins ;
+
+	max += nBins*(static_cast<int>(perBin+1) - perBin) ;
+
+	TH1D* histo = new TH1D( histName.c_str() , "" , nBins , 0 , max) ;
 
 	if ( dataStyle )
 	{
@@ -145,12 +150,14 @@ TH1D* HistoCreator::getNHit(std::string histName) const
 	for ( std::vector<Event>::const_iterator it = eventList.begin() ; it != eventList.end() ; ++it )
 	{
 		const Event& event = *it ;
-		histo->Fill( event.nHit ) ;
+		float nHit = static_cast<float>(event.nHit) ;
+		if (custom)
+			nHit = event.nHitCustom ;
+		histo->Fill( nHit ) ;
 	}
 
 	return histo ;
 }
-
 
 TH1D* HistoCreator::getLongiProfile(std::string histName) const
 {

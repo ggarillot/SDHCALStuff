@@ -4,22 +4,8 @@
 using namespace std ;
 
 Event::Event()
-	: longiProfile( std::vector<double>() ) ,
-	  radiProfile( std::vector<double>() )
 {
 }
-
-/*
-Event::Event(const Event &eventToCopy)
-{
-	*this = eventToCopy ;
-}
-*/
-/*
-Event::~Event()
-{
-}
-*/
 
 EventReader::EventReader()
 {
@@ -38,7 +24,6 @@ Event EventReader::getEvent(Long64_t entry)
 	if ( isOk == 0 )
 		return event ;
 
-
 	event.energy = energy ;
 	event.nHit = nHit ;
 	event.nHit1 = nHit1 ;
@@ -48,6 +33,11 @@ Event EventReader::getEvent(Long64_t entry)
 	event.nHough1 = nHough1 ;
 	event.nHough2 = nHough2 ;
 	event.nHough3 = nHough3 ;
+
+	event.nHitCustom = nHitCustom ;
+	event.nHit1Custom = nHit1Custom ;
+	event.nHit2Custom = nHit2Custom ;
+	event.nHit3Custom = nHit3Custom ;
 
 	event.density = density ;
 
@@ -85,6 +75,11 @@ void EventReader::setTree(TTree* _tree)
 	tree->SetBranchAddress("nHough2" , &nHough2) ;
 	tree->SetBranchAddress("nHough3" , &nHough3) ;
 
+	tree->SetBranchAddress("nHitCustom" , &nHitCustom) ;
+	tree->SetBranchAddress("nHit1Custom" , &nHit1Custom) ;
+	tree->SetBranchAddress("nHit2Custom" , &nHit2Custom) ;
+	tree->SetBranchAddress("nHit3Custom" , &nHit3Custom) ;
+
 	tree->SetBranchAddress("longiProfile" , &longiProfile) ;
 	tree->SetBranchAddress("radiProfile" , &radiProfile) ;
 	tree->SetBranchAddress("density" , &density) ;
@@ -114,6 +109,11 @@ void EventReader::setTreeWrite(TTree* _tree)
 	_tree->Branch("nHough1" , &nHough1) ;
 	_tree->Branch("nHough2" , &nHough2) ;
 	_tree->Branch("nHough3" , &nHough3) ;
+
+	_tree->Branch("nHitCustom" , &nHitCustom) ;
+	_tree->Branch("nHit1Custom" , &nHit1Custom) ;
+	_tree->Branch("nHit2Custom" , &nHit2Custom) ;
+	_tree->Branch("nHit3Custom" , &nHit3Custom) ;
 
 	_tree->Branch("longiProfile" , &longiProfile) ;
 	_tree->Branch("radiProfile" , &radiProfile) ;

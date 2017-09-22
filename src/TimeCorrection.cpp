@@ -22,6 +22,11 @@ void TimeCorrection::correct(std::vector<Event>& eventList , int polOrder)
 	TProfile* hnHit2 = new TProfile("hnHit2" , "hnHit2" , 50 , 0 , 7 ) ;
 	TProfile* hnHit3 = new TProfile("hnHit3" , "hnHit3" , 50 , 0 , 7 ) ;
 
+	TProfile* hnHitCustom = new TProfile("hnHitCustom" , "hnHitCustom" , 50 , 0 , 7 ) ;
+	TProfile* hnHit1Custom = new TProfile("hnHit1Custom" , "hnHit1Custom" , 50 , 0 , 7 ) ;
+	TProfile* hnHit2Custom = new TProfile("hnHit2Custom" , "hnHit2Custom" , 50 , 0 , 7 ) ;
+	TProfile* hnHit3Custom = new TProfile("hnHit3Custom" , "hnHit3Custom" , 50 , 0 , 7 ) ;
+
 	std::vector<TProfile*> longiProfVec ;
 	std::vector<TProfile*> radiProfVec ;
 
@@ -59,6 +64,11 @@ void TimeCorrection::correct(std::vector<Event>& eventList , int polOrder)
 		hnHit2->Fill(time , event.nHit2) ;
 		hnHit3->Fill(time , event.nHit3) ;
 
+		hnHitCustom->Fill(time , event.nHitCustom) ;
+		hnHit1Custom->Fill(time , event.nHit1Custom) ;
+		hnHit2Custom->Fill(time , event.nHit2Custom) ;
+		hnHit3Custom->Fill(time , event.nHit3Custom) ;
+
 		for ( unsigned int i = 0 ; i < 48 ; ++i )
 		{
 			longiProfVec.at(i)->Fill(time , event.longiProfile.at(i) ) ;
@@ -84,24 +94,26 @@ void TimeCorrection::correct(std::vector<Event>& eventList , int polOrder)
 	TF1* f2 = new TF1("f2" , funcStr.str().c_str() ) ;
 	TF1* f3 = new TF1("f3" , funcStr.str().c_str() ) ;
 
-
-//	f->SetParLimits(2 , 0 , 50000) ;
-//	f1->SetParLimits(2 , 0 , 50000) ;
-//	f2->SetParLimits(2 , 0 , 50000) ;
-//	f3->SetParLimits(2 , 0 , 50000) ;
+	TF1* fr = new TF1("fr" , funcStr.str().c_str() ) ;
+	TF1* f1r = new TF1("f1r" , funcStr.str().c_str() ) ;
+	TF1* f2r = new TF1("f2r" , funcStr.str().c_str() ) ;
+	TF1* f3r = new TF1("f3r" , funcStr.str().c_str() ) ;
 
 	hnHit->Fit(f , "QB") ;
 	hnHit1->Fit(f1 , "QB") ;
 	hnHit2->Fit(f2 , "QB") ;
 	hnHit3->Fit(f3 , "QB") ;
 
+	hnHitCustom->Fit(fr , "QB") ;
+	hnHit1Custom->Fit(f1r , "QB") ;
+	hnHit2Custom->Fit(f2r , "QB") ;
+	hnHit3Custom->Fit(f3r , "QB") ;
 
 	for ( unsigned int i = 0 ; i < 48 ; ++i )
 	{
 		longiProfVec.at(i)->Fit(longiProfVecFit.at(i) , "QB") ;
 		radiProfVec.at(i)->Fit(radiProfVecFit.at(i) , "QB") ;
 	}
-
 
 	std::cout << "Time Origin : " << std::endl ;
 	std::cout << "pol " << polOrder << "  nHit : " << f->GetParameter(0) << std::endl ;
@@ -126,16 +138,29 @@ void TimeCorrection::correct(std::vector<Event>& eventList , int polOrder)
 		event.nHit2 -= ( f2->Eval(time) - f2->GetParameter(0) ) ;
 		event.nHit3 -= ( f3->Eval(time) - f3->GetParameter(0) ) ;
 
+		event.nHitCustom -= ( fr->Eval(time) - fr->GetParameter(0) ) ;
+		event.nHit1Custom -= ( f1r->Eval(time) - f1r->GetParameter(0) ) ;
+		event.nHit2Custom -= ( f2r->Eval(time) - f2r->GetParameter(0) ) ;
+		event.nHit3Custom -= ( f3r->Eval(time) - f3r->GetParameter(0) ) ;
+
 	}
 
 	delete f ;
 	delete f1 ;
 	delete f2 ;
 	delete f3 ;
+	delete fr ;
+	delete f1r ;
+	delete f2r ;
+	delete f3r ;
 	delete hnHit ;
 	delete hnHit1 ;
 	delete hnHit2 ;
 	delete hnHit3 ;
+	delete hnHitCustom ;
+	delete hnHit1Custom ;
+	delete hnHit2Custom ;
+	delete hnHit3Custom ;
 
 	for ( unsigned int i = 0 ; i < 48 ; ++i )
 	{

@@ -25,7 +25,8 @@ class HistoCreator
 
 		double getMeanRadius() const ;
 
-		TH1D* getNHit(std::string histName) const ;
+		TH1D* getNHit(std::string histName , int thr = 0 , bool custom = false) const ;
+
 		TH1D* getLongiProfile(std::string histName) const ;
 		TH1D* getRadiProfile(std::string histName) const ;
 
