@@ -2,6 +2,7 @@
 #define Minimisation_h
 
 #include <vector>
+#include <string>
 
 class Minimisation
 {
@@ -15,11 +16,19 @@ class Minimisation
 
 		virtual void printParam() const ;
 
+		enum Limits { kNoLimit , kNegative , kPositive } ;
+
+		std::vector<double> getParams() const { return bestParam ; }
+
+		void setParams(std::vector<double> values) ;
+
 
 	protected :
 		unsigned int nParam ;
-		std::vector<double> bestParam ;
-		double step = 0.1 ;
+		std::vector<double> bestParam = {} ;
+		std::vector<Limits> limitsParam = {} ;
+		std::vector<std::string> nameParam = {} ;
+		double step = 0.2 ;
 
 } ;
 

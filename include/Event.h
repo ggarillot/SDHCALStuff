@@ -48,6 +48,8 @@ struct Event
 
 		double emFraction = 0 ;
 
+		std::vector<float> thr = {} ;
+		std::vector<float> densityPerHit = {} ;
 } ;
 
 class EventReader
@@ -104,6 +106,9 @@ class EventReader
 		ULong64_t spillEventTime = 0 ;
 
 		double emFraction = 0 ;
+
+		std::vector<float>* thr = nullptr ;
+		std::vector<float>* densityPerHit = nullptr ;
 } ;
 
 

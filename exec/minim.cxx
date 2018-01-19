@@ -15,29 +15,29 @@
 
 int main()
 {
-	std::string dir = "/home/garillot/files/Analysis/DATA" ;
+	std::string dir = "/home/garillot/files/DATA/Analysis/SPS_Oct2015/163" ;
 
 	std::vector<std::string> aList ;
 	std::vector<std::string> bList ;
 
-	//pions SPS Oct2016
-	// 1 pC 2thr
-	aList.push_back( "733660" ) ;
-	aList.push_back( "733665" ) ;
-	aList.push_back( "733683" ) ;
-	aList.push_back( "733686" ) ;
-	aList.push_back( "733689" ) ;
-	aList.push_back( "733693" ) ;
-	aList.push_back( "733696" ) ;
+	//	//pions SPS Oct2016
+	//	// 1 pC 2thr
+	//	aList.push_back( "733660" ) ;
+	//	aList.push_back( "733665" ) ;
+	//	aList.push_back( "733683" ) ;
+	//	aList.push_back( "733686" ) ;
+	//	aList.push_back( "733689" ) ;
+	//	aList.push_back( "733693" ) ;
+	//	aList.push_back( "733696" ) ;
 
-	// 5 pC 2thr
-	bList.push_back( "733756" ) ;
-	bList.push_back( "733750" ) ;
-	bList.push_back( "733724" ) ;
-	bList.push_back( "733728" ) ;
-	bList.push_back( "733742" ) ;
-	bList.push_back( "733743" ) ;
-	bList.push_back( "733754" ) ;
+	//	// 5 pC 2thr
+	//	bList.push_back( "733756" ) ;
+	//	bList.push_back( "733750" ) ;
+	//	bList.push_back( "733724" ) ;
+	//	bList.push_back( "733728" ) ;
+	//	bList.push_back( "733742" ) ;
+	//	bList.push_back( "733743" ) ;
+	//	bList.push_back( "733754" ) ;
 
 
 	//	std::string aStr("1pC") ;
@@ -47,14 +47,14 @@ int main()
 
 	//pions SPS Oct2015
 	// 163
-	//	aList.push_back( "730716" ) ;
-	//	aList.push_back( "730656" ) ;
-	//	aList.push_back( "730634" ) ;
-	//	aList.push_back( "730657" ) ;
-	//	aList.push_back( "730651" ) ;
-	//	aList.push_back( "730655" ) ;
-	//	aList.push_back( "730659" ) ;
-	//	aList.push_back( "730677" ) ;
+	aList.push_back( "730716" ) ;
+	aList.push_back( "730656" ) ;
+	aList.push_back( "730634" ) ;
+	aList.push_back( "730657" ) ;
+	aList.push_back( "730651" ) ;
+	aList.push_back( "730655" ) ;
+	aList.push_back( "730659" ) ;
+	aList.push_back( "730677" ) ;
 
 	//	// 214
 	//	bList.push_back( "730903" ) ;
@@ -73,16 +73,18 @@ int main()
 
 
 
-	std::string aStr("QuadSim") ;
-	//	std::string bStr("QuadSimCheat") ;
+	//	std::string aStr("QuadSim") ;
+	//	std::string aStr("Pions") ;
+	std::string aStr("QuadData") ;
 
 	QuadMinimisation a(aStr) ;
 	//	QuadMinimisation b(bStr) ;
 
-	std::string bStr("LinearSim") ;
+	//	std::string bStr("Electrons") ;
 	//		std::string bStr("LinearSimCheat") ;
 	//	LinearMinimisation a(aStr) ;
-	LinearMinimisation b(bStr) ;
+	std::string bStr("DensityData") ;
+	LinearDensityMinimisation b(bStr) ;
 
 
 
@@ -90,31 +92,33 @@ int main()
 	//	BinaryMinimisation b(bStr) ;
 
 
-	//	for ( std::vector<std::string>::const_iterator it = aList.begin() ; it != aList.end() ; ++it )
-	//	{
-	//		std::stringstream toto ;
-	//		toto << dir << "/" << *it << ".root" ;
-	//		a.loadFile(toto.str() , 5e6) ;
-	//	}
+	for ( std::vector<std::string>::const_iterator it = aList.begin() ; it != aList.end() ; ++it )
+	{
+		std::stringstream toto ;
+		toto << dir << "/" << *it << ".root" ;
+		//		a.loadFile(toto.str() , 5e6) ;
+		a.loadFile(toto.str()) ;
+	}
 
-	//	for ( std::vector<std::string>::const_iterator it = bList.begin() ; it != bList.end() ; ++it )
-	//	{
-	//		std::stringstream toto ;
-	//		toto << dir << "/" << *it << ".root" ;
-	//		b.loadFile(toto.str() , 5e6) ;
-	//	}
+	for ( std::vector<std::string>::const_iterator it = aList.begin() ; it != aList.end() ; ++it )
+	{
+		std::stringstream toto ;
+		toto << dir << "/" << *it << ".root" ;
+		//				b.loadFile(toto.str() , 5e6) ;
+		b.loadFile(toto.str()) ;
+	}
 
 	//	std::string simDir = "/home/garillot/files/Analysis/Centered/OldDigit/Geant4.9.6/FTF_BIC/" ;
-	std::string simDir = "/home/garillot/files/Analysis/Centered/OldDigit/Geant4.9.6/QGSP_BERT_HP/" ;
+	std::string simDir = "/home/garillot/files/Centered/Analysis/Geant4.10.3/QGSP_BERT/" ;
 
 	//very temporary
-	std::string simILDDir = "/home/garillot/files/Analysis/ILD/" ;
+	//	std::string simILDDir = "/home/garillot/files/Analysis/ILD/" ;
 
 	//	//simulation
 	//	for ( int i = 10 ; i < 81 ; i += 10 )
 	//	{
 	//		std::stringstream toto ;
-	//		toto << simDir << "single_pi-_" << i << "GeV.root" ;
+	//		toto << simDir << "pi-_" << i << "GeV.root" ;
 	//		a.loadFile(toto.str()) ;
 	//	}
 
@@ -122,25 +126,25 @@ int main()
 	//	for ( int i = 10 ; i < 81 ; i += 10 )
 	//	{
 	//		std::stringstream toto ;
-	//		toto << simDir << "single_pi-_" << i << "GeV.root" ;
+	//		toto << simDir << "e-_" << i << "GeV.root" ;
 	//		b.loadFile(toto.str()) ;
 	//	}
 
-	//simulation ILD
-	for ( int i = 10 ; i < 91 ; i += 10 )
-	{
-		std::stringstream toto ;
-		toto << simILDDir << i << "GeV.root" ;
-		a.loadFile(toto.str()) ;
-	}
+	//	//simulation ILD
+	//	for ( int i = 10 ; i < 91 ; i += 10 )
+	//	{
+	//		std::stringstream toto ;
+	//		toto << simILDDir << i << "GeV.root" ;
+	//		a.loadFile(toto.str()) ;
+	//	}
 
-	//simulation ILD cheat
-	for ( int i = 10 ; i < 91 ; i += 10 )
-	{
-		std::stringstream toto ;
-		toto << simILDDir << i << "GeV.root" ;
-		b.loadFile(toto.str()) ;
-	}
+	//	//simulation ILD cheat
+	//	for ( int i = 10 ; i < 91 ; i += 10 )
+	//	{
+	//		std::stringstream toto ;
+	//		toto << simILDDir << i << "GeV.root" ;
+	//		b.loadFile(toto.str()) ;
+	//	}
 
 
 	//	for ( std::vector<std::string>::const_iterator it = bList.begin() ; it != bList.end() ; ++it )
@@ -151,23 +155,26 @@ int main()
 	//	}
 
 
+//	a.setParams( {0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,
+//				  0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,
+//				  0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3} ) ;
 	a.minimize() ;
-	a.printParam() ;
 
-		a.fitForCheat() ;
-		a.minimize() ;
-		a.printParam() ;
+	//	a.fitForCheat() ;
+	//	a.minimize() ;
 
 	a.createHistos() ;
 	a.writeHistos() ;
 
-
-	b.minimize() ;
-	b.printParam() ;
-
-		b.fitForCheat() ;
+	//	b.setParams( a.getParams() ) ;
+	b.setParams( {0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,
+				  0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,
+				  0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3} ) ;
 		b.minimize() ;
-		b.printParam() ;
+
+
+	//	b.fitForCheat() ;
+	//	b.minimize() ;
 
 	b.createHistos() ;
 	b.writeHistos() ;
@@ -211,7 +218,7 @@ int main()
 	fita.fitAllHistos() ;
 	fitb.fitAllHistos() ;
 
-	TFile* file = new TFile("eRecoILD.root","RECREATE") ;
+	TFile* file = new TFile("eReco.root","RECREATE") ;
 
 
 	TCanvas* linC = new TCanvas("linCanv" , "linCanv"  , 700 , 900) ;

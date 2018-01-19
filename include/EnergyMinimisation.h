@@ -10,6 +10,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <sstream>
 
 class EnergyMinimisation : public Minimisation
 {
@@ -50,7 +51,7 @@ class EnergyMinimisation : public Minimisation
 		EventReader eventReader ;
 		std::vector<Event> eventList ;
 
-		int nEventsPerEnergy = 300000000 ;
+		int nEventsPerEnergy = 3000 ;
 		std::map<float,int> nEventsPerEnergyMap ;
 
 		std::vector<TFile*> fileVec ;
@@ -75,7 +76,46 @@ class LinearMinimisation : public EnergyMinimisation
 class QuadMinimisation : public EnergyMinimisation
 {
 	public :
-		QuadMinimisation(std::string name_ = "Quad") : EnergyMinimisation(9, name_) {}
+		QuadMinimisation(std::string name_ = "Quad") : EnergyMinimisation(9, name_)
+		{
+			limitsParam[8] = kPositive ;
+		}
+
+		// bool cut() const {return true ;}
+		double estimFunc(const double* param , Event _event) const ;
+} ;
+
+class LinearDensityMinimisation : public EnergyMinimisation
+{
+	public :
+				LinearDensityMinimisation(std::string name_ = "LinearDensity") : EnergyMinimisation(27, name_)
+				{
+					limitsParam = std::vector<Limits>(nParam , kPositive) ;
+
+					for ( unsigned int i = 0 ; i < 9 ; ++i )
+					{
+						std::stringstream alpha ; alpha << "alpha" << i ;
+						std::stringstream beta ; beta << "beta" << i ;
+						std::stringstream gamma ; gamma << "gamma" << i ;
+
+						nameParam[i] = alpha.str() ;
+						nameParam[i+9] = beta.str() ;
+						nameParam[i+18] = gamma.str() ;
+					}
+				}
+//		LinearDensityMinimisation(std::string name_ = "LinearDensity") : EnergyMinimisation(12, name_)
+//		{
+//			limitsParam = std::vector<Limits>(nParam , kPositive) ;
+
+//			for ( unsigned int i = 0 ; i < 9 ; ++i )
+//			{
+//				std::stringstream gamma ; gamma << "d" << i+1 ;
+//				nameParam[i] = gamma.str() ;
+//			}
+//			nameParam[9] = "alpha" ;
+//			nameParam[10] = "beta" ;
+//			nameParam[11] = "gamma" ;
+//		}
 
 		// bool cut() const {return true ;}
 		double estimFunc(const double* param , Event _event) const ;
@@ -84,7 +124,10 @@ class QuadMinimisation : public EnergyMinimisation
 class QuadHoughMinimisation : public EnergyMinimisation
 {
 	public :
-		QuadHoughMinimisation(std::string name_ = "QuadHough") : EnergyMinimisation(10, name_) {}
+		QuadHoughMinimisation(std::string name_ = "QuadHough") : EnergyMinimisation(10, name_)
+		{
+			limitsParam[8] = kPositive ;
+		}
 
 		// bool cut() const {return true ;}
 		double estimFunc(const double* param , Event _event) const ;

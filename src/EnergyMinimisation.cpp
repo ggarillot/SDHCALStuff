@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <set>
+#include <numeric>
 
 #include <TH1.h>
 #include <TGraphErrors.h>
@@ -20,7 +21,6 @@ EnergyMinimisation::EnergyMinimisation(unsigned int nParam_ , std::string name_)
 	  treeVec() ,
 	  fit()
 {
-
 }
 
 EnergyMinimisation::~EnergyMinimisation()
@@ -110,9 +110,9 @@ void EnergyMinimisation::loadFile(std::string fileName , unsigned long long begi
 
 bool EnergyMinimisation::cut(Event event) const
 {
-//	bool geomCut = std::sqrt( (event.cog[0]-600)*(event.cog[0]-600) + (event.cog[2]-530)*(event.cog[2]-530) ) < 95 ;
-	//		bool geomCut = std::sqrt( (event.cog[0]-480)*(event.cog[0]-480) + (event.cog[2]-460)*(event.cog[2]-460) ) < 80 ;
-	bool geomCut = true ;
+	//	bool geomCut = std::sqrt( (event.cog[0]-600)*(event.cog[0]-600) + (event.cog[2]-530)*(event.cog[2]-530) ) < 95 ;
+			bool geomCut = std::sqrt( (event.cog[0]-480)*(event.cog[0]-480) + (event.cog[2]-460)*(event.cog[2]-460) ) < 80 ;
+//	bool geomCut = true ;
 	bool timeCut = event.spillEventTime < 30e6 ;
 	bool cut = ( event.transverseRatio > 0.05f && event.neutral == 0 /*&& event.nTrack > 0*/ && double(event.nHit)/event.nLayer > 2.2 && double(event.nInteractingLayer)/event.nLayer > 0.2 ) ;
 
@@ -221,22 +221,53 @@ double QuadMinimisation::estimFunc(const double* param , Event _event) const
 {
 	double alpha = param[0] + param[1]*_event.nHit + param[2]*_event.nHit*_event.nHit ;
 	double beta  = param[3] + param[4]*_event.nHit + param[5]*_event.nHit*_event.nHit ;
-	//			double gamma = param[6] + param[7]*_event.nHit + param[8]*_event.nHit*_event.nHit ;
-	double gamma = param[6] + param[7]*_event.nHit + fabs(param[8])*_event.nHit*_event.nHit ;
-
-	//	return alpha*(_event.nHit1) + beta*(_event.nHit2) + gamma*(_event.nHit3) ;
+	double gamma = param[6] + param[7]*_event.nHit + param[8]*_event.nHit*_event.nHit ;
 
 	return alpha*(_event.nHit1) + beta*(_event.nHit2) + gamma*(_event.nHit3) ;
+}
+
+double LinearDensityMinimisation::estimFunc(const double* param , Event _event) const
+{
+	//	auto list = std::vector<int>(nParam , 0) ;
+
+	auto list = std::vector< std::vector<double> >(3 , std::vector<double>(9,0) ) ;
+
+	assert( _event.thr.size() == _event.densityPerHit.size() ) ;
+
+	for ( unsigned i = 0 ; i < _event.thr.size() ; ++i )
+	{
+		unsigned int density = _event.densityPerHit[i]-1 ;
+		unsigned int thr = _event.thr[i]-1 ;
+
+		//		list.at( thr ).at( density ) += param[density] ;
+		list.at( thr ).at( density ) ++ ;
+		//		list.at( _event.densityPerHit[i]-1 ) ++ ;
+		//		if ( _event.thr[i] >= 2 )
+		//			list.at( 9 + _event.densityPerHit[i]-1 ) ++ ;
+		//		if ( _event.thr[i] >= 3 )
+		//			list.at( 18 + _event.densityPerHit[i]-1 ) ++ ;
+	}
+
+	double toReturn = 0 ;
+	//	for ( unsigned int i = 0 ; i < nParam ; ++i )
+	//		toReturn += param[i]*list[i] ;
+
+
+	//	for ( unsigned int i = 0 ; i < 3 ; ++i )
+	//		toReturn += std::accumulate(list.at(i).begin() , list.at(i).end() , 0.0)*param[9+i] ;
+
+	for ( unsigned int i = 0 ; i < 3 ; ++i )
+		for ( unsigned int j = 0 ; j < 9 ; ++j )
+			toReturn += list.at(i).at(j) * param[9*i+j] ;
+
+	return toReturn ;
 }
 
 double QuadHoughMinimisation::estimFunc(const double* param , Event _event) const
 {
 	double alpha = param[0] + param[1]*_event.nHit + param[2]*_event.nHit*_event.nHit ;
 	double beta  = param[3] + param[4]*_event.nHit + param[5]*_event.nHit*_event.nHit ;
-	//			double gamma = param[6] + param[7]*_event.nHit + param[8]*_event.nHit*_event.nHit ;
-	double gamma = param[6] + param[7]*_event.nHit + fabs(param[8])*_event.nHit*_event.nHit ;
-
-	//	return alpha*(_event.nHit1) + beta*(_event.nHit2) + gamma*(_event.nHit3) ;
+	double gamma = param[6] + param[7]*_event.nHit + param[8]*_event.nHit*_event.nHit ;
 
 	return alpha*(_event.nHit1-_event.nHough1) + beta*(_event.nHit2-_event.nHough2) + gamma*(_event.nHit3-_event.nHough3) + param[9]*(_event.nHough1 + _event.nHough2 + _event.nHough3) ;
 }

@@ -48,27 +48,3 @@ foreach( testsourcefile ${APP_SOURCES} )
 	target_link_libraries( ${testname} MyLib ${ROOT_COMPONENT_LIBRARIES} )
 	install(TARGETS ${testname} RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/bin)
 endforeach( testsourcefile ${APP_SOURCES} )
-
-
-#SET (Minim ./src/main.cxx)
-#SET (TuneElectrons ./src/tuneElectrons.cxx)
-#SET (trainNN ./src/trainNN.cxx)
-#SET (applyNN ./src/applyNN.cxx)
-
-#SET (createOKTrees ./src/createOKTrees.cxx)
-
-##set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "../bin/")
-
-#ADD_EXECUTABLE( Minim ${Minim} ${headers} ${sources} )
-#ADD_EXECUTABLE( TuneElectrons ${TuneElectrons} ${headers} ${sources} )
-#ADD_EXECUTABLE( trainNN ${trainNN} ${headers} ${sources} )
-#ADD_EXECUTABLE( applyNN ${applyNN} ${headers} ${sources} )
-#ADD_EXECUTABLE( createOKTrees ${createOKTrees} ${headers} ${sources} )
-
-#TARGET_LINK_LIBRARIES( Minim ${ROOT_COMPONENT_LIBRARIES} )
-#TARGET_LINK_LIBRARIES( TuneElectrons ${ROOT_COMPONENT_LIBRARIES} )
-#TARGET_LINK_LIBRARIES( trainNN ${ROOT_COMPONENT_LIBRARIES} )
-#TARGET_LINK_LIBRARIES( applyNN ${ROOT_COMPONENT_LIBRARIES} )
-#TARGET_LINK_LIBRARIES( createOKTrees ${ROOT_COMPONENT_LIBRARIES} )
-
-#INSTALL(TARGETS Minim TuneElectrons trainNN applyNN createOKTrees RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/bin)
