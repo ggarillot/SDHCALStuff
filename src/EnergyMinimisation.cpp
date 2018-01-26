@@ -15,10 +15,6 @@ using namespace std ;
 EnergyMinimisation::EnergyMinimisation(unsigned int nParam_ , std::string name_)
 	: Minimisation(nParam_) , name(name_) ,
 	  eventReader() ,
-	  eventList() ,
-	  nEventsPerEnergyMap() ,
-	  fileVec() ,
-	  treeVec() ,
 	  fit()
 {
 }
@@ -53,8 +49,10 @@ void EnergyMinimisation::loadFile(std::string fileName)
 		if ( nEventsPerEnergyMap[event.energy] < nEventsPerEnergy )
 		{
 			nEventsPerEnergyMap[event.energy]++ ;
-			eventList.push_back( event ) ;
+			eventListForMinim.push_back( event ) ;
 		}
+
+		eventList.push_back( event ) ;
 	}
 
 	delete tree ;
@@ -99,8 +97,10 @@ void EnergyMinimisation::loadFile(std::string fileName , unsigned long long begi
 		if ( nEventsPerEnergyMap[ it->energy ] < nEventsPerEnergy )
 		{
 			nEventsPerEnergyMap[ it->energy ]++ ;
-			eventList.push_back( *it ) ;
+			eventListForMinim.push_back( *it ) ;
 		}
+
+		eventList.push_back( *it ) ;
 	}
 
 	delete tree ;
@@ -111,10 +111,12 @@ void EnergyMinimisation::loadFile(std::string fileName , unsigned long long begi
 bool EnergyMinimisation::cut(Event event) const
 {
 	//	bool geomCut = std::sqrt( (event.cog[0]-600)*(event.cog[0]-600) + (event.cog[2]-530)*(event.cog[2]-530) ) < 95 ;
-			bool geomCut = std::sqrt( (event.cog[0]-480)*(event.cog[0]-480) + (event.cog[2]-460)*(event.cog[2]-460) ) < 80 ;
-//	bool geomCut = true ;
-	bool timeCut = event.spillEventTime < 30e6 ;
-	bool cut = ( event.transverseRatio > 0.05f && event.neutral == 0 /*&& event.nTrack > 0*/ && double(event.nHit)/event.nLayer > 2.2 && double(event.nInteractingLayer)/event.nLayer > 0.2 ) ;
+//	bool geomCut = std::sqrt( (event.cog[0]-480)*(event.cog[0]-480) + (event.cog[2]-460)*(event.cog[2]-460) ) < 80 ;
+	bool geomCut = std::sqrt( (event.cog[0]-580)*(event.cog[0]-580) + (event.cog[2]-505)*(event.cog[2]-505) ) < 100 ;
+	//	bool geomCut = true ;
+	//	bool timeCut = event.spillEventTime < 30e6 ;
+	bool timeCut = event.spillEventTime < 10e6 ;
+	bool cut = ( event.transverseRatio > 0.05f && event.neutral == 0 && event.nTrack > 0 && double(event.nHit)/event.nLayer > 2.2 && double(event.nInteractingLayer)/event.nLayer > 0.2 ) ;
 
 	return ( cut && geomCut && timeCut ) ;
 	//	return true ;
@@ -124,7 +126,7 @@ double EnergyMinimisation::functionToMinimize(const double* param)
 {
 	double chi2 = 0 ;
 
-	for( vector<Event>::const_iterator it = eventList.begin() ; it != eventList.end() ; ++it )
+	for( vector<Event>::const_iterator it = eventListForMinim.begin() ; it != eventListForMinim.end() ; ++it )
 	{
 		const Event& event = *it ;
 		double estimEnergy = estimFunc(param , event) ;
@@ -160,7 +162,7 @@ void EnergyMinimisation::fitForCheat()
 
 double EnergyMinimisation::minimize()
 {
-	cout << "Minimisation over " << eventList.size() << " entries" << endl ;
+	cout << "Minimisation over " << eventListForMinim.size() << " entries" << endl ;
 	cout << nEventsPerEnergyMap.size() << " different energies" << endl ;
 	cout << endl ;
 

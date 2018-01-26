@@ -49,13 +49,14 @@ class EnergyMinimisation : public Minimisation
 		std::string name ;
 
 		EventReader eventReader ;
-		std::vector<Event> eventList ;
+		std::vector<Event> eventList = {} ;
+		std::vector<Event> eventListForMinim = {} ;
 
 		int nEventsPerEnergy = 3000 ;
-		std::map<float,int> nEventsPerEnergyMap ;
+		std::map<float,int> nEventsPerEnergyMap = {} ;
 
-		std::vector<TFile*> fileVec ;
-		std::vector<TTree*> treeVec ;
+		std::vector<TFile*> fileVec = {} ;
+		std::vector<TTree*> treeVec = {} ;
 
 		Fit fit ;
 
