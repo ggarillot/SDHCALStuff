@@ -5,6 +5,8 @@
 #include <sstream>
 #include <set>
 #include <numeric>
+#include <limits>
+#include <array>
 
 #include <TH1.h>
 #include <TGraphErrors.h>
@@ -17,29 +19,26 @@ EnergyMinimisation::EnergyMinimisation(unsigned int nParam_ , std::string name_)
 	  eventReader() ,
 	  fit()
 {
+	std::cout << "Initialize " << name << " energy minimizer" << std::endl ;
 }
 
 EnergyMinimisation::~EnergyMinimisation()
 {
-
 }
 
 void EnergyMinimisation::loadFile(std::string fileName)
 {
+	std::cout << "Load file : " << fileName << std::endl ;
 	TFile* file = new TFile(fileName.c_str() , "READ") ;
 	TTree* tree ;
 	file->GetObject("tree" , tree) ;
 
-	//	fileVec.push_back(file) ;
-	//	treeVec.push_back(tree) ;
-
 	eventReader.setTree(tree) ;
-	//	event.setBranchAddress(tree) ;
 
 	int iEntry = 0 ;
 	while ( tree->GetEntry(iEntry++) )
 	{
-		Event event = eventReader.getEvent(iEntry-1) ;
+		Event event = eventReader.getEvent(iEntry-1 , true) ;
 		if ( !cut(event) )
 			continue ;
 
@@ -61,6 +60,7 @@ void EnergyMinimisation::loadFile(std::string fileName)
 
 void EnergyMinimisation::loadFile(std::string fileName , unsigned long long beginTime)
 {
+	std::cout << "Load file : " << fileName << ", and correct time with begin = " << beginTime << std::endl ;
 	TimeCorrection timeCorr ;
 	timeCorr.setBeginTime(beginTime) ;
 
@@ -68,19 +68,14 @@ void EnergyMinimisation::loadFile(std::string fileName , unsigned long long begi
 	TTree* tree ;
 	file->GetObject("tree" , tree) ;
 
-	//	fileVec.push_back(file) ;
-	//	treeVec.push_back(tree) ;
-
 	eventReader.setTree(tree) ;
-	//	event.setBranchAddress(tree) ;
-
 
 	std::vector<Event> temp ;
 
 	int iEntry = 0 ;
 	while ( tree->GetEntry(iEntry++) )
 	{
-		Event event = eventReader.getEvent(iEntry-1) ;
+		Event event = eventReader.getEvent(iEntry-1 , true) ;
 		if ( !cut(event) )
 			continue ;
 
@@ -110,16 +105,17 @@ void EnergyMinimisation::loadFile(std::string fileName , unsigned long long begi
 
 bool EnergyMinimisation::cut(Event event) const
 {
-	//	bool geomCut = std::sqrt( (event.cog[0]-600)*(event.cog[0]-600) + (event.cog[2]-530)*(event.cog[2]-530) ) < 95 ;
-//	bool geomCut = std::sqrt( (event.cog[0]-480)*(event.cog[0]-480) + (event.cog[2]-460)*(event.cog[2]-460) ) < 80 ;
-	bool geomCut = std::sqrt( (event.cog[0]-580)*(event.cog[0]-580) + (event.cog[2]-505)*(event.cog[2]-505) ) < 100 ;
-	//	bool geomCut = true ;
-	//	bool timeCut = event.spillEventTime < 30e6 ;
-	bool timeCut = event.spillEventTime < 10e6 ;
+	bool beamCut = false ;
+
+	if (geomCut.at(2) < std::numeric_limits<double>::epsilon())
+		beamCut = true ;
+	else
+		beamCut = ( event.cog[0]-geomCut.at(0) )*( event.cog[0]-geomCut.at(0) ) + ( event.cog[2]-geomCut.at(1) )*( event.cog[2]-geomCut.at(1) ) < geomCut.at(2)*geomCut.at(2) ;
+
+	bool timeCut = event.spillEventTime < 50e6 ;
 	bool cut = ( event.transverseRatio > 0.05f && event.neutral == 0 && event.nTrack > 0 && double(event.nHit)/event.nLayer > 2.2 && double(event.nInteractingLayer)/event.nLayer > 0.2 ) ;
 
-	return ( cut && geomCut && timeCut ) ;
-	//	return true ;
+	return ( cut && beamCut && timeCut ) ;
 }
 
 double EnergyMinimisation::functionToMinimize(const double* param)
@@ -230,37 +226,11 @@ double QuadMinimisation::estimFunc(const double* param , Event _event) const
 
 double LinearDensityMinimisation::estimFunc(const double* param , Event _event) const
 {
-	//	auto list = std::vector<int>(nParam , 0) ;
-
-	auto list = std::vector< std::vector<double> >(3 , std::vector<double>(9,0) ) ;
-
-	assert( _event.thr.size() == _event.densityPerHit.size() ) ;
-
-	for ( unsigned i = 0 ; i < _event.thr.size() ; ++i )
-	{
-		unsigned int density = _event.densityPerHit[i]-1 ;
-		unsigned int thr = _event.thr[i]-1 ;
-
-		//		list.at( thr ).at( density ) += param[density] ;
-		list.at( thr ).at( density ) ++ ;
-		//		list.at( _event.densityPerHit[i]-1 ) ++ ;
-		//		if ( _event.thr[i] >= 2 )
-		//			list.at( 9 + _event.densityPerHit[i]-1 ) ++ ;
-		//		if ( _event.thr[i] >= 3 )
-		//			list.at( 18 + _event.densityPerHit[i]-1 ) ++ ;
-	}
-
 	double toReturn = 0 ;
-	//	for ( unsigned int i = 0 ; i < nParam ; ++i )
-	//		toReturn += param[i]*list[i] ;
 
-
-	//	for ( unsigned int i = 0 ; i < 3 ; ++i )
-	//		toReturn += std::accumulate(list.at(i).begin() , list.at(i).end() , 0.0)*param[9+i] ;
-
-	for ( unsigned int i = 0 ; i < 3 ; ++i )
-		for ( unsigned int j = 0 ; j < 9 ; ++j )
-			toReturn += list.at(i).at(j) * param[9*i+j] ;
+	for ( unsigned int i = 1 ; i < 4 ; ++i )
+		for ( unsigned int j = 1 ; j < 10 ; ++j )
+			toReturn += _event.hitThrDensity.at(i).at(j) * param[9*(i-1)+j-1] ;
 
 	return toReturn ;
 }

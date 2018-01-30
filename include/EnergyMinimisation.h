@@ -8,14 +8,17 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <vector>
+#include <array>
 #include <map>
 #include <string>
 #include <sstream>
+
 
 class EnergyMinimisation : public Minimisation
 {
 	public :
 		EnergyMinimisation(unsigned int nParam_ , std::string name_) ;
+
 		virtual ~EnergyMinimisation() ;
 
 		virtual bool cut(Event event) const ;
@@ -41,9 +44,11 @@ class EnergyMinimisation : public Minimisation
 		void fitForCheat() ;
 
 		inline Fit& getFit() { return fit ; }
-
+		inline Fit* getFitPtr() { return &fit ; }
 
 		void setName(std::string _name) { name = _name ; }
+
+		void setGeomCut(std::array<double,3> _geomCut) { geomCut = _geomCut ; }
 
 	protected :
 		std::string name ;
@@ -61,6 +66,8 @@ class EnergyMinimisation : public Minimisation
 		Fit fit ;
 
 		double cheat[4] = {0,1,0,0} ; //to improve linearity
+
+		std::array<double,3> geomCut = {{0,0,0}} ;
 
 
 } ;

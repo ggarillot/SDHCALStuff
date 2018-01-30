@@ -1,0 +1,42 @@
+{
+	"graphFileName": "outputComparaisonFileName.root",
+	"minimizers":
+	[
+		{
+			"name": "minimizer1name",
+			"method": "Quadratic",
+			"comment": "method can be : Linear , Quadratic , LinearDensity",
+			"files":
+			{
+				"dir": "/path/to/myFiles",
+				"files":
+				[
+					{"file": "file1.root"},
+					{"file": "file2.root"},
+					{"file": "file3.root"}
+				]
+			},
+			"geomCut": {"x":"470" , "y":"455" , "radius":"90"}
+		},
+		{
+			"name": "minimizer2name",
+			"method": "LinearDensity",
+			"files":
+			{
+				"files":
+				[
+					{"file": "/path/to/dir1/file1.root"},
+					{"file": "/path/to/dir2/file2.root"},
+					{"file": "/path/to/dir2/file3.root"}
+				]
+			},
+			"geomCut": {"x":"470" , "y":"455" , "radius":"90"},
+
+			"parameters": [0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3],
+			"comment": "first parameters for the minimization : has to be exact same number of parameters (3 for Linear, 9 for Quadratic, 27 for LinearDensity)",
+
+			"cheat": "true",
+			"commeent": "cheat is to try to improve linearity"
+		}
+	]
+}

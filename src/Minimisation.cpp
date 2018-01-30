@@ -48,12 +48,12 @@ double Minimisation::minimize()
 	cout << "prevMin : " << prevMin << endl ;
 
 	//	ROOT::Math::GSLSimAnMinimizer min ;
-//	 ROOT::Math::GSLMinimizer min ;
+	//	 ROOT::Math::GSLMinimizer min ;
 	//	ROOT::Minuit2::Minuit2Minimizer min ( ROOT::Minuit2::kCombined ) ;
 	ROOT::Minuit2::Minuit2Minimizer min ;
 	min.SetMaxFunctionCalls(400000) ;
 	min.SetMaxIterations(2) ;
-	min.SetTolerance(1e-6) ;
+	min.SetTolerance(1e-3) ;
 	min.SetPrintLevel(2) ;
 
 	ROOT::Math::Functor f(this , &Minimisation::functionToMinimize , nParam) ;
