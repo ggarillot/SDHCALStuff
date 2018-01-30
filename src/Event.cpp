@@ -16,7 +16,7 @@ EventReader::~EventReader()
 }
 
 
-Event EventReader::getEvent(Long64_t entry)
+Event EventReader::getEvent(Long64_t entry, bool computeDensity)
 {
 	Event event ;
 	int isOk = tree->GetEntry(entry) ;
@@ -61,6 +61,20 @@ Event EventReader::getEvent(Long64_t entry)
 
 	event.thr = *thr ;
 	event.densityPerHit = *densityPerHit ;
+
+	if ( computeDensity )
+	{
+		for ( unsigned int i = 0 ; i < event.thr.size() ; ++i )
+		{
+			unsigned int _thr = static_cast<unsigned int>( event.thr[i] ) ;
+			unsigned int _density = static_cast<unsigned int>( event.densityPerHit[i] ) ;
+
+			event.hitThrDensity.at(0).at(0) ++ ;
+			event.hitThrDensity.at(0).at(_density) ++ ;
+			event.hitThrDensity.at(_thr).at(0) ++ ;
+			event.hitThrDensity.at(_thr).at(_density) ++ ;
+		}
+	}
 
 	return event ;
 }

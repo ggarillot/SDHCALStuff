@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <map>
+#include <array>
 
 #include <TROOT.h>
 #include <TTree.h>
@@ -50,6 +51,8 @@ struct Event
 
 		std::vector<float> thr = {} ;
 		std::vector<float> densityPerHit = {} ;
+
+		std::array< std::array<int,10> , 4 > hitThrDensity = {{}} ;
 } ;
 
 class EventReader
@@ -58,7 +61,7 @@ class EventReader
 		EventReader() ;
 		~EventReader() ;
 
-		Event getEvent(Long64_t entry) ;
+		Event getEvent(Long64_t entry , bool computeDensity = false) ;
 
 		void setTree(TTree* _tree) ;
 
