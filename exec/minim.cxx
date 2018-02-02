@@ -56,15 +56,7 @@ int main(int argc , char** argv)
 		if ( i.count("geomCut") )
 		{
 			auto geomCut = i.at("geomCut") ;
-
-			std::string xStr = geomCut.at("x") ;
-			std::string yStr = geomCut.at("y") ;
-			std::string radiusStr = geomCut.at("radius") ;
-			double x = std::atof( xStr.c_str() ) ;
-			double y = std::atof( yStr.c_str() ) ;
-			double radius = std::atof( radiusStr.c_str() ) ;
-			std::array<double,3> limits {{ x , y , radius }} ;
-			minimizer->setGeomCut(limits) ;
+			minimizer->setGeomCut({{ geomCut.at("x") , geomCut.at("y") , geomCut.at("radius") }}) ;
 		}
 
 		auto files = i.at("files") ;
@@ -98,6 +90,8 @@ int main(int argc , char** argv)
 		{
 			if (i.at("cheat") == "true")
 				cheatVec.push_back(true) ;
+			else
+				cheatVec.push_back(false) ;
 		}
 		else
 			cheatVec.push_back(false) ;
@@ -273,6 +267,9 @@ int main(int argc , char** argv)
 	resC->Close() ;
 
 	file->Close() ;
+
+	for ( auto minimizer : minimizersVec )
+		delete minimizer ;
 
 	return 0 ;
 }

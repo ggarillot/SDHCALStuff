@@ -10,8 +10,8 @@
 class TimeCorrection
 {
 	public :
-		TimeCorrection() ;
-		~TimeCorrection() { ; }
+		TimeCorrection() = default ;
+		~TimeCorrection() = default ;
 
 		inline void setBeginTime(unsigned long long time) { beginTime = time ; }
 		inline void setEndTime(unsigned long long time) { endTime = time ; }

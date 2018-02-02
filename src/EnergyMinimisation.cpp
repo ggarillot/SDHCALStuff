@@ -116,7 +116,7 @@ bool EnergyMinimisation::cut(Event event) const
 	else
 		beamCut = ( event.cog[0]-geomCut.at(0) )*( event.cog[0]-geomCut.at(0) ) + ( event.cog[2]-geomCut.at(1) )*( event.cog[2]-geomCut.at(1) ) < geomCut.at(2)*geomCut.at(2) ;
 
-	bool timeCut = event.spillEventTime > beginSpillCut && event.spillEventTime < endSpillCut ;
+	bool timeCut = event.spillEventTime >= beginSpillCut && event.spillEventTime < endSpillCut ;
 
 	bool cut = ( event.transverseRatio > 0.05f && event.neutral == 0 && event.nTrack > 0 && double(event.nHit)/event.nLayer > 2.2 && double(event.nInteractingLayer)/event.nLayer > 0.2 ) ;
 

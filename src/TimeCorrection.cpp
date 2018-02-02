@@ -11,11 +11,6 @@
 #include <TStyle.h>
 #include <TApplication.h>
 
-TimeCorrection::TimeCorrection()
-{
-
-}
-
 void TimeCorrection::correct(std::vector<Event>& eventList , int polOrder)
 {
 	TProfile* hnHit = new TProfile("hnHit" , "hnHit" , 50 , 0 , 7 ) ;

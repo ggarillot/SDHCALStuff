@@ -58,12 +58,9 @@ class Fit
 
 	protected :
 
-		TFile* histoFile = nullptr ;
-
-		std::map<float,TH1*> histoMap ;
-		std::map<float,fitResults> fitMap ;
-		std::map<float,RooPlot*> plotMap ;
-		std::map<float,TCanvas*> canvasMap ;
+		std::map<float,TH1*> histoMap = {} ;
+		std::map<float,fitResults> fitMap = {} ;
+		std::map<float,RooPlot*> plotMap = {} ;
 
 } ;
 

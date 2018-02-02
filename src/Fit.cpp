@@ -22,30 +22,26 @@ using namespace std ;
 using namespace RooFit ;
 
 Fit::Fit()
-	: histoMap() ,
-	  fitMap() ,
-	  plotMap() ,
-	  canvasMap()
 {
 }
 
 Fit::~Fit()
 {
-//	std::cout << "Fit::~Fit()" << std::endl ;
-	if (histoFile)
-		delete histoFile ;
+	for ( const auto it : plotMap )
+		delete it.second ;
 }
 
 //may bug
 void Fit::readFile(const char* file)
 {
-	histoFile = new TFile(file, "READ") ;
+	TFile* histoFile = new TFile(file, "READ") ;
 
 	for(unsigned int i = 1 ; i < 101 ; i++)
 	{
 		stringstream toto ;
 		toto << i << "GeV" ;
-		histoFile->GetObject(toto.str().c_str(), histoMap[i]) ;
+		histoMap[i] = dynamic_cast<TH1*>( histoFile->Get(toto.str().c_str()) ) ;
+		histoMap[i]->SetDirectory(0) ;
 	}
 
 	vector<float> toErase ;
@@ -58,6 +54,8 @@ void Fit::readFile(const char* file)
 
 	for(vector<float>::iterator it = toErase.begin() ; it != toErase.end() ; ++it)
 		histoMap.erase(*it) ;
+
+	histoFile->Close() ;
 }
 
 void Fit::fitHisto(float energy)

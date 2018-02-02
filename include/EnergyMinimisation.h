@@ -79,7 +79,6 @@ class LinearMinimisation : public EnergyMinimisation
 	public :
 		LinearMinimisation(std::string name_ = "Linear") : EnergyMinimisation(3, name_) {}
 
-		// bool cut() const {return true ;}
 		double estimFunc(const double* param , Event _event) const ;
 } ;
 
@@ -91,7 +90,6 @@ class QuadMinimisation : public EnergyMinimisation
 			limitsParam[8] = kPositive ;
 		}
 
-		// bool cut() const {return true ;}
 		double estimFunc(const double* param , Event _event) const ;
 } ;
 
@@ -127,7 +125,6 @@ class LinearDensityMinimisation : public EnergyMinimisation
 //			nameParam[11] = "gamma" ;
 //		}
 
-		// bool cut() const {return true ;}
 		double estimFunc(const double* param , Event _event) const ;
 } ;
 
@@ -139,7 +136,6 @@ class QuadHoughMinimisation : public EnergyMinimisation
 			limitsParam[8] = kPositive ;
 		}
 
-		// bool cut() const {return true ;}
 		double estimFunc(const double* param , Event _event) const ;
 } ;
 

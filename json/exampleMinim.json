@@ -17,7 +17,7 @@
 					{"file": "file3.root" , "spillBegin":0 , "spillEnd":50e6}
 				]
 			},
-			"geomCut": {"x":"470" , "y":"455" , "radius":"90"}
+			"geomCut": {"x":470 , "y":455 , "radius":90}
 		},
 		{
 			"name": "minimizer2name",
@@ -31,7 +31,7 @@
 					{"file": "/path/to/dir2/file3.root"}
 				]
 			},
-			"geomCut": {"x":"470" , "y":"455" , "radius":"90"},
+			"geomCut": {"x":470 , "y":455 , "radius":90},
 
 			"parameters": [0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3],
 			"comment": "first parameters for the minimization : has to be exact same number of parameters (3 for Linear, 9 for Quadratic, 27 for LinearDensity)",
