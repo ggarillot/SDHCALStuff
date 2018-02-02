@@ -9,11 +9,12 @@
 			"files":
 			{
 				"dir": "/path/to/myFiles",
+				"comment": "spillBegin and spillEnd for correcting with time in spill for data",
 				"files":
 				[
-					{"file": "file1.root"},
-					{"file": "file2.root"},
-					{"file": "file3.root"}
+					{"file": "file1.root" , "spillBegin":0 , "spillEnd":50e6},
+					{"file": "file2.root" , "spillBegin":0 , "spillEnd":50e6},
+					{"file": "file3.root" , "spillBegin":0 , "spillEnd":50e6}
 				]
 			},
 			"geomCut": {"x":"470" , "y":"455" , "radius":"90"}

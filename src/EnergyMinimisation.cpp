@@ -58,17 +58,21 @@ void EnergyMinimisation::loadFile(std::string fileName)
 	file->Close() ;
 }
 
-void EnergyMinimisation::loadFile(std::string fileName , unsigned long long beginTime)
+void EnergyMinimisation::loadFile(std::string fileName , unsigned long long beginTime, unsigned long long endTime)
 {
-	std::cout << "Load file : " << fileName << ", and correct time with begin = " << beginTime << std::endl ;
+	std::cout << "Load file : " << fileName << ", and correct time with begin = " << beginTime << " to end = " << endTime << std::endl ;
 	TimeCorrection timeCorr ;
 	timeCorr.setBeginTime(beginTime) ;
+	timeCorr.setEndTime(endTime) ;
 
 	TFile* file = new TFile(fileName.c_str() , "READ") ;
 	TTree* tree ;
 	file->GetObject("tree" , tree) ;
 
 	eventReader.setTree(tree) ;
+
+	beginSpillCut = beginTime ;
+	endSpillCut = endTime ;
 
 	std::vector<Event> temp ;
 
@@ -82,7 +86,7 @@ void EnergyMinimisation::loadFile(std::string fileName , unsigned long long begi
 		temp.push_back(event) ;
 	}
 
-	timeCorr.correct(temp) ;
+	timeCorr.correctThrDensity(temp) ;
 
 	for ( std::vector<Event>::const_iterator it = temp.begin() ; it != temp.end() ; ++it )
 	{
@@ -112,7 +116,8 @@ bool EnergyMinimisation::cut(Event event) const
 	else
 		beamCut = ( event.cog[0]-geomCut.at(0) )*( event.cog[0]-geomCut.at(0) ) + ( event.cog[2]-geomCut.at(1) )*( event.cog[2]-geomCut.at(1) ) < geomCut.at(2)*geomCut.at(2) ;
 
-	bool timeCut = event.spillEventTime < 50e6 ;
+	bool timeCut = event.spillEventTime > beginSpillCut && event.spillEventTime < endSpillCut ;
+
 	bool cut = ( event.transverseRatio > 0.05f && event.neutral == 0 && event.nTrack > 0 && double(event.nHit)/event.nLayer > 2.2 && double(event.nInteractingLayer)/event.nLayer > 0.2 ) ;
 
 	return ( cut && beamCut && timeCut ) ;
@@ -213,15 +218,16 @@ void EnergyMinimisation::drawResults()
 
 double LinearMinimisation::estimFunc(const double* param , Event _event) const
 {
-	return param[0]*(_event.nHit1) + param[1]*(_event.nHit2) + param[2]*(_event.nHit3) ;
+	return param[0]*(_event.hitThrDensity.at(1).at(0)) + param[1]*(_event.hitThrDensity.at(2).at(0)) + param[2]*(_event.hitThrDensity.at(3).at(0)) ;
 }
 double QuadMinimisation::estimFunc(const double* param , Event _event) const
 {
-	double alpha = param[0] + param[1]*_event.nHit + param[2]*_event.nHit*_event.nHit ;
-	double beta  = param[3] + param[4]*_event.nHit + param[5]*_event.nHit*_event.nHit ;
-	double gamma = param[6] + param[7]*_event.nHit + param[8]*_event.nHit*_event.nHit ;
+	int nHit = _event.hitThrDensity.at(0).at(0) ;
+	double alpha = param[0] + param[1]*nHit + param[2]*nHit*nHit ;
+	double beta  = param[3] + param[4]*nHit + param[5]*nHit*nHit ;
+	double gamma = param[6] + param[7]*nHit + param[8]*nHit*nHit ;
 
-	return alpha*(_event.nHit1) + beta*(_event.nHit2) + gamma*(_event.nHit3) ;
+	return alpha*(_event.hitThrDensity.at(1).at(0)) + beta*(_event.hitThrDensity.at(2).at(0)) + gamma*(_event.hitThrDensity.at(3).at(0)) ;
 }
 
 double LinearDensityMinimisation::estimFunc(const double* param , Event _event) const
@@ -237,14 +243,16 @@ double LinearDensityMinimisation::estimFunc(const double* param , Event _event) 
 
 double QuadHoughMinimisation::estimFunc(const double* param , Event _event) const
 {
-	double alpha = param[0] + param[1]*_event.nHit + param[2]*_event.nHit*_event.nHit ;
-	double beta  = param[3] + param[4]*_event.nHit + param[5]*_event.nHit*_event.nHit ;
-	double gamma = param[6] + param[7]*_event.nHit + param[8]*_event.nHit*_event.nHit ;
+	int nHit = _event.hitThrDensity.at(0).at(0) ;
+	double alpha = param[0] + param[1]*nHit + param[2]*nHit*nHit ;
+	double beta  = param[3] + param[4]*nHit + param[5]*nHit*nHit ;
+	double gamma = param[6] + param[7]*nHit + param[8]*nHit*nHit ;
 
-	return alpha*(_event.nHit1-_event.nHough1) + beta*(_event.nHit2-_event.nHough2) + gamma*(_event.nHit3-_event.nHough3) + param[9]*(_event.nHough1 + _event.nHough2 + _event.nHough3) ;
+	return alpha*(_event.hitThrDensity.at(1).at(0)-_event.nHough1) + beta*(_event.hitThrDensity.at(2).at(0)-_event.nHough2) + gamma*(_event.hitThrDensity.at(3).at(0)-_event.nHough3) + param[9]*(_event.nHough1 + _event.nHough2 + _event.nHough3) ;
 }
 
 double BinaryMinimisation::estimFunc(const double* param , Event _event) const
 {
-	return param[0] + param[1]*_event.nHit + param[2]*_event.nHit*_event.nHit + param[3]*_event.nHit*_event.nHit*_event.nHit ;
+	int nHit = _event.hitThrDensity.at(0).at(0) ;
+	return param[0] + param[1]*nHit + param[2]*nHit*nHit + param[3]*nHit*nHit*nHit ;
 }

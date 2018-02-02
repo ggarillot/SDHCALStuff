@@ -24,7 +24,7 @@ class EnergyMinimisation : public Minimisation
 		virtual bool cut(Event event) const ;
 
 		void loadFile(std::string fileName) ;
-		void loadFile(std::string fileName , unsigned long long beginTime) ;
+		void loadFile(std::string fileName , unsigned long long beginTime , unsigned long long endTime) ;
 
 
 		double functionToMinimize(const double* param) ;
@@ -68,6 +68,8 @@ class EnergyMinimisation : public Minimisation
 		double cheat[4] = {0,1,0,0} ; //to improve linearity
 
 		std::array<double,3> geomCut = {{0,0,0}} ;
+		double beginSpillCut = 0 ;
+		double endSpillCut = 50e6 ;
 
 
 } ;

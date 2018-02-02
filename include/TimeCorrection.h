@@ -18,9 +18,11 @@ class TimeCorrection
 
 		void correct(std::vector<Event>& eventList, int polOrder = 2) ;
 
+		void correctThrDensity(std::vector<Event>& eventList, int polOrder = 2) ;
+
 	protected :
 		unsigned long long beginTime = 0 ;
-		unsigned long long endTime = 30e6 ;
+		unsigned long long endTime = 50e6 ;
 };
 
 #endif //TimeCorrection_h

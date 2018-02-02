@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include "json.hpp"
+
 #include "EnergyMinimisation.h"
 #include "Event.h"
 
@@ -10,215 +12,126 @@
 #include <TLegend.h>
 #include <TLine.h>
 
+#include <fstream>
 #include <sstream>
 #include <string>
+#include <cstdlib>
+#include <cassert>
 
-int main()
+int main(int argc , char** argv)
 {
-	std::string dir = "/home/garillot/files/DATA/Analysis/SPS_Oct2015/163" ;
-
-	std::vector<std::string> aList ;
-	std::vector<std::string> bList ;
-
-	//	//pions SPS Oct2016
-	//	// 1 pC 2thr
-	//	aList.push_back( "733660" ) ;
-	//	aList.push_back( "733665" ) ;
-	//	aList.push_back( "733683" ) ;
-	//	aList.push_back( "733686" ) ;
-	//	aList.push_back( "733689" ) ;
-	//	aList.push_back( "733693" ) ;
-	//	aList.push_back( "733696" ) ;
-
-	//	// 5 pC 2thr
-	//	bList.push_back( "733756" ) ;
-	//	bList.push_back( "733750" ) ;
-	//	bList.push_back( "733724" ) ;
-	//	bList.push_back( "733728" ) ;
-	//	bList.push_back( "733742" ) ;
-	//	bList.push_back( "733743" ) ;
-	//	bList.push_back( "733754" ) ;
-
-
-	//	std::string aStr("1pC") ;
-	//	std::string bStr("5pC") ;
-
-
-
-	//pions SPS Oct2015
-	// 163
-	aList.push_back( "730716" ) ;
-	aList.push_back( "730656" ) ;
-	aList.push_back( "730634" ) ;
-	aList.push_back( "730657" ) ;
-	aList.push_back( "730651" ) ;
-	aList.push_back( "730655" ) ;
-	aList.push_back( "730659" ) ;
-	aList.push_back( "730677" ) ;
-
-	//	// 214
-	//	bList.push_back( "730903" ) ;
-	//	bList.push_back( "730888" ) ;
-	//	bList.push_back( "730886" ) ;
-	//	bList.push_back( "730882" ) ;
-	//	bList.push_back( "730861" ) ;
-	//	bList.push_back( "730858" ) ;
-	//	bList.push_back( "730851" ) ;
-	//	bList.push_back( "730847" ) ;
-
-	//	std::string aStr("163") ;
-	//	std::string bStr("214") ;
-
-
-
-
-
-	//	std::string aStr("QuadSim") ;
-	//	std::string aStr("Pions") ;
-	std::string aStr("QuadData") ;
-
-	QuadMinimisation a(aStr) ;
-	//	QuadMinimisation b(bStr) ;
-
-	//	std::string bStr("Electrons") ;
-	//		std::string bStr("LinearSimCheat") ;
-	//	LinearMinimisation a(aStr) ;
-	std::string bStr("DensityData") ;
-	LinearDensityMinimisation b(bStr) ;
-
-
-
-	//	BinaryMinimisation a(aStr) ;
-	//	BinaryMinimisation b(bStr) ;
-
-
-	for ( std::vector<std::string>::const_iterator it = aList.begin() ; it != aList.end() ; ++it )
+	if ( argc < 1 )
 	{
-		std::stringstream toto ;
-		toto << dir << "/" << *it << ".root" ;
-		//		a.loadFile(toto.str() , 5e6) ;
-		a.loadFile(toto.str()) ;
+		std::cerr << "ERROR : Please provide a json configuration file" << std::endl ;
+		return 1 ;
 	}
 
-	for ( std::vector<std::string>::const_iterator it = aList.begin() ; it != aList.end() ; ++it )
+	std::vector<EnergyMinimisation*> minimizersVec {} ;
+	std::vector<bool> cheatVec {} ;
+	std::vector<Color_t> colorVec {kRed-4 , kBlue-4 , kGreen+2 , kCyan+2} ;
+
+	std::string jsonFileName = argv[1] ;
+
+
+	std::ifstream jsonFile(jsonFileName) ;
+	auto json = nlohmann::json::parse(jsonFile) ;
+
+	std::string graphName = json.at("graphFileName") ;
+	auto minimizersList = json.at("minimizers") ;
+
+	for ( const auto& i : minimizersList )
 	{
-		std::stringstream toto ;
-		toto << dir << "/" << *it << ".root" ;
-		//				b.loadFile(toto.str() , 5e6) ;
-		b.loadFile(toto.str()) ;
+		EnergyMinimisation* minimizer = nullptr ;
+
+		std::string method = i.at("method") ;
+		std::string name = i.at("name") ;
+
+		if ( method == "Linear" )
+			minimizer = new LinearMinimisation(name) ;
+		else if ( method == "Quadratic" )
+			minimizer = new QuadMinimisation(name) ;
+		else if ( method == "LinearDensity" )
+			minimizer = new LinearDensityMinimisation(name) ;
+
+		if ( i.count("geomCut") )
+		{
+			auto geomCut = i.at("geomCut") ;
+
+			std::string xStr = geomCut.at("x") ;
+			std::string yStr = geomCut.at("y") ;
+			std::string radiusStr = geomCut.at("radius") ;
+			double x = std::atof( xStr.c_str() ) ;
+			double y = std::atof( yStr.c_str() ) ;
+			double radius = std::atof( radiusStr.c_str() ) ;
+			std::array<double,3> limits {{ x , y , radius }} ;
+			minimizer->setGeomCut(limits) ;
+		}
+
+		auto files = i.at("files") ;
+
+		std::string dir = "" ;
+		if ( files.count("dir") )
+			dir = files.at("dir") ;
+
+		auto files2 = files.at("files") ;
+
+		for ( const auto& file : files2 )
+		{
+			std::string fileName = file.at("file") ;
+			if ( file.count("spillBegin") )
+				minimizer->loadFile( dir + "/" + fileName , file.at("spillBegin") , file.at("spillEnd") ) ;
+			else
+				minimizer->loadFile( dir + "/" + fileName ) ;
+		}
+
+		if ( i.count("parameters") )
+		{
+			auto paramVec = i.at("parameters") ;
+
+			assert( paramVec.size() == minimizer->getParams().size() ) ;
+			minimizer->setParams(paramVec) ;
+		}
+
+		minimizersVec.push_back( minimizer ) ;
+
+		if ( i.count("cheat") )
+		{
+			if (i.at("cheat") == "true")
+				cheatVec.push_back(true) ;
+		}
+		else
+			cheatVec.push_back(false) ;
 	}
 
-	//	std::string simDir = "/home/garillot/files/Analysis/Centered/OldDigit/Geant4.9.6/FTF_BIC/" ;
-	std::string simDir = "/home/garillot/files/Centered/Analysis/Geant4.10.3/QGSP_BERT/" ;
+	jsonFile.close() ;
 
-	//very temporary
-	//	std::string simILDDir = "/home/garillot/files/Analysis/ILD/" ;
+	assert( minimizersVec.size() == cheatVec.size() ) ;
 
-	//	//simulation
-	//	for ( int i = 10 ; i < 81 ; i += 10 )
-	//	{
-	//		std::stringstream toto ;
-	//		toto << simDir << "pi-_" << i << "GeV.root" ;
-	//		a.loadFile(toto.str()) ;
-	//	}
+	for ( unsigned int i = 0 ; i < minimizersVec.size() ; ++i )
+	{
+		minimizersVec.at(i)->minimize() ;
 
-	//	//simulation cheat
-	//	for ( int i = 10 ; i < 81 ; i += 10 )
-	//	{
-	//		std::stringstream toto ;
-	//		toto << simDir << "e-_" << i << "GeV.root" ;
-	//		b.loadFile(toto.str()) ;
-	//	}
+		if ( cheatVec.at(i) == true )
+		{
+			minimizersVec.at(i)->fitForCheat() ;
+			minimizersVec.at(i)->minimize() ;
+		}
 
-	//	//simulation ILD
-	//	for ( int i = 10 ; i < 91 ; i += 10 )
-	//	{
-	//		std::stringstream toto ;
-	//		toto << simILDDir << i << "GeV.root" ;
-	//		a.loadFile(toto.str()) ;
-	//	}
-
-	//	//simulation ILD cheat
-	//	for ( int i = 10 ; i < 91 ; i += 10 )
-	//	{
-	//		std::stringstream toto ;
-	//		toto << simILDDir << i << "GeV.root" ;
-	//		b.loadFile(toto.str()) ;
-	//	}
+		minimizersVec.at(i)->createHistos() ;
+		minimizersVec.at(i)->writeHistos() ;
+	}
 
 
-	//	for ( std::vector<std::string>::const_iterator it = bList.begin() ; it != bList.end() ; ++it )
-	//	{
-	//		std::stringstream toto ;
-	//		toto << dir << "/" << *it << ".root" ;
-	//		b.loadFile(toto.str() , 5e6) ;
-	//	}
+	std::vector<Fit*> fitVec {} ;
+
+	for ( unsigned int i = 0 ; i < minimizersVec.size() ; ++i )
+		fitVec.push_back( minimizersVec.at(i)->getFitPtr() ) ;
+
+	for ( unsigned int i = 0 ; i < fitVec.size() ; ++i )
+		fitVec.at(i)->fitAllHistos() ;
 
 
-//	a.setParams( {0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,
-//				  0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,
-//				  0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3} ) ;
-	a.minimize() ;
-
-	//	a.fitForCheat() ;
-	//	a.minimize() ;
-
-	a.createHistos() ;
-	a.writeHistos() ;
-
-	//	b.setParams( a.getParams() ) ;
-	b.setParams( {0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,
-				  0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,
-				  0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3} ) ;
-		b.minimize() ;
-
-
-	//	b.fitForCheat() ;
-	//	b.minimize() ;
-
-	b.createHistos() ;
-	b.writeHistos() ;
-
-
-
-	/*
-
-	// QuadMinimisation a ;
-	QuadMinimisationData a ;
-	a.loadEvents(163) ;
-	a.minimize() ;
-	a.printParam() ;
-
-	//		a.fitForCheat() ;
-	//		a.minimize() ;
-	//		a.printParam() ;
-
-	a.createHistos() ;
-	a.writeHistos() ;
-	//	a.drawResults() ;
-
-	QuadMinimisationData b ;
-	b.loadEvents(214) ;
-	b.minimize() ;
-	b.printParam() ;
-
-	//		a.fitForCheat() ;
-	//		a.minimize() ;
-	//		a.printParam() ;
-
-	b.createHistos() ;
-	b.writeHistos() ;
-	//	a.drawResults() ;
-
-	*/
-
-	Fit& fita = a.getFit() ;
-	Fit& fitb = b.getFit() ;
-
-	fita.fitAllHistos() ;
-	fitb.fitAllHistos() ;
-
-	TFile* file = new TFile("eReco.root","RECREATE") ;
+	TFile* file = new TFile(graphName.c_str() , "RECREATE") ;
 
 
 	TCanvas* linC = new TCanvas("linCanv" , "linCanv"  , 700 , 900) ;
@@ -248,24 +161,26 @@ int main()
 	linRange->GetYaxis()->SetTitleOffset(1.8f) ;
 	linRange->Draw() ;
 
-	TGraphErrors* ga = fita.getLin() ;
-	TGraphErrors* gb = fitb.getLin() ;
+	std::vector<TGraphErrors*> linGraphVec {} ;
 
-	ga->SetMarkerColor(kBlue-4) ;
-	gb->SetMarkerColor(kRed-4) ;
+	for ( unsigned int i = 0 ; i < fitVec.size() ; ++i )
+		linGraphVec.push_back( fitVec.at(i)->getLin() ) ;
 
-	ga->SetMarkerSize(1.4f) ;
-	gb->SetMarkerSize(1.4f) ;
+	for ( unsigned int i = 0 ; i < linGraphVec.size() ; ++i )
+	{
+		linGraphVec.at(i)->SetMarkerColor( colorVec.at(i) ) ;
+		linGraphVec.at(i)->SetMarkerSize(1.4f) ;
+		linGraphVec.at(i)->Draw("P same") ;
+	}
 
-	ga->Draw("P same") ;
-	gb->Draw("P same") ;
 
 
 	TLegend* linleg = new TLegend(0.18,0.75,0.6,0.88) ;
 	linleg->SetBorderSize(0) ;
 
-	linleg->AddEntry(ga , aStr.c_str() ,"p") ;
-	linleg->AddEntry(gb , bStr.c_str() ,"p") ;
+	for ( unsigned int i = 0 ; i < linGraphVec.size() ; ++i )
+		linleg->AddEntry(linGraphVec.at(i) , minimizersVec.at(i)->getName().c_str() ,"p") ;
+
 	linleg->Draw() ;
 
 
@@ -296,22 +211,20 @@ int main()
 	linDevDown->SetLineWidth(2) ;
 	linDevDown->Draw() ;
 
-	TGraphErrors* gaDev = fita.getLinDev() ;
-	TGraphErrors* gbDev = fitb.getLinDev() ;
+	std::vector<TGraphErrors*> linDevGraphVec {} ;
 
-	gaDev->SetMarkerColor(kBlue-4) ;
-	gbDev->SetMarkerColor(kRed-4) ;
+	for ( unsigned int i = 0 ; i < fitVec.size() ; ++i )
+		linDevGraphVec.push_back( fitVec.at(i)->getLinDev() ) ;
 
-	gaDev->SetMarkerSize(1.4f) ;
-	gbDev->SetMarkerSize(1.4f) ;
-
-
-	gaDev->Draw("PZ same") ;
-	gbDev->Draw("PZ same") ;
+	for ( unsigned int i = 0 ; i < linDevGraphVec.size() ; ++i )
+	{
+		linDevGraphVec.at(i)->SetMarkerColor( colorVec.at(i) ) ;
+		linDevGraphVec.at(i)->SetMarkerSize(1.4f) ;
+		linDevGraphVec.at(i)->Draw("PZ same") ;
+	}
 
 	linC->Write() ;
 	linC->Close() ;
-
 
 
 	TCanvas* resC = new TCanvas("resC" , "resC" , 800 , 800) ;
@@ -330,41 +243,29 @@ int main()
 	resC1->cd() ;
 
 
-
-	//	linC1->SetTopMargin(0.05f) ;
-	//	linC1->SetBottomMargin(0.02f) ;
-	//	linC2->SetTopMargin(0) ;
-	//	linC2->SetBottomMargin(0.15f) ;
-	//	linC1->SetLeftMargin(0.15f) ;
-	//	linC2->SetLeftMargin(0.15f) ;
-	//	linC1->SetRightMargin(0.02f) ;
-	//	linC2->SetRightMargin(0.02f) ;
-
-
-
-
-	TGraphErrors* gaRes = fita.getResol() ;
-	TGraphErrors* gbRes = fitb.getResol() ;
-
-
-	gaRes->SetMarkerColor(kBlue-4) ;
-	gbRes->SetMarkerColor(kRed-4) ;
-
-	gaRes->SetMarkerSize(1.4f) ;
-	gbRes->SetMarkerSize(1.4f) ;
-
-
 	TH2D* range = new TH2D("range", ";Energy(GeV);resolution" , 1 , 0 , 85 , 1 , 0, 0.3) ;
 	range->GetYaxis()->SetTitleOffset(1.5f) ;
 	range->Draw() ;
 
-	gaRes->Draw("P same") ;
-	gbRes->Draw("P same") ;
+	std::vector<TGraphErrors*> resolGraphVec {} ;
+
+	for ( unsigned int i = 0 ; i < fitVec.size() ; ++i )
+		resolGraphVec.push_back( fitVec.at(i)->getResol() ) ;
+
+
+	for ( unsigned int i = 0 ; i < resolGraphVec.size() ; ++i )
+	{
+		resolGraphVec.at(i)->SetMarkerColor( colorVec.at(i) ) ;
+		resolGraphVec.at(i)->SetMarkerSize(1.4f) ;
+		resolGraphVec.at(i)->Draw("P same") ;
+	}
+
 
 	TLegend* leg = new TLegend(0.6,0.7,0.85,0.85) ;
 	leg->SetLineColor(kWhite) ;
-	leg->AddEntry(gaRes , aStr.c_str() , "p") ;
-	leg->AddEntry(gbRes , bStr.c_str() , "p") ;
+
+	for ( unsigned int i = 0 ; i < resolGraphVec.size() ; ++i )
+		leg->AddEntry(resolGraphVec.at(i) , minimizersVec.at(i)->getName().c_str() ,"p") ;
 
 	leg->Draw() ;
 
