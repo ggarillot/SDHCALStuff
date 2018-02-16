@@ -21,10 +21,13 @@
 typedef struct fitResults fitResults ;
 struct fitResults
 {
-	double mean ;
-	double resol ;
-	double meanErr ;
-	double resolErr ;
+	double mean = 0 ;
+	double resol = 0 ;
+	double meanErr = 0 ;
+	double resolErr = 0 ;
+	double sigma = 0 ;
+	double alpha = 0 ;
+	double n = 0 ;
 } ;
 
 
@@ -35,12 +38,9 @@ class Fit
 		~Fit() ;
 
 		void readFile(const char* file) ;
-		void loadHistos(std::map<float,TH1*> _histoMap) { histoMap = _histoMap ; }
+		void loadHistos(const std::map<float,std::shared_ptr<TH1>>& _histoMap) ;
 
-		void fitHisto(float energy) ;
 		void fitAllHistos() ;
-
-		void drawPlot(float energy) ;
 
 		TGraphErrors* getLin(bool restrain = false) const ;
 		void drawLin() ;
@@ -51,16 +51,19 @@ class Fit
 		TGraphErrors* getResol(bool restrain = false) const ;
 		void drawResol() ;
 
+		void drawPlot(float energy) ;
 
 		Fit(const Fit &toCopy) = delete ;
+		Fit(Fit&& toCopy) = default ;
 		void operator=(const Fit &toCopy) = delete ;
 
 
 	protected :
+		void clear() ;
+		void fitHisto(float energy) ;
 
-		std::map<float,TH1*> histoMap = {} ;
+		std::map<float,std::shared_ptr<TH1>> histoMap = {} ;
 		std::map<float,fitResults> fitMap = {} ;
-		std::map<float,RooPlot*> plotMap = {} ;
 
 } ;
 

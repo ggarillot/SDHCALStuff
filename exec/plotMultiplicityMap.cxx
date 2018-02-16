@@ -37,6 +37,9 @@ struct IJ
 
 int main(int argc , char** argv)
 {
+	if (argc < 1)
+		std::cerr <<"Error : no file provided" << std::endl ;
+
 	std::string fileName = argv[1] ;
 
 	TFile* inputFile = TFile::Open( fileName.c_str() ) ;
@@ -131,7 +134,7 @@ int main(int argc , char** argv)
 		std::get<1>( globalEff3Map[IJ(i,j)] ) += efficiencies->at(2) ;
 	}
 
-	TH2D* histoMul = new TH2D("histoMul" , ";I;J" , 96 , 1 , 97 , 96 , 1 , 97) ;
+	TH2D* histoMul = new TH2D("histoMul" , ";x (mm);y (mm)" , 96 , 5.204 , 1004.372 , 96 , 5.204 , 1004.372) ;
 	TH2D* histoEff3 = new TH2D("histoEff3" , ";I;J" , 96 , 1 , 97 , 96 , 1 , 97) ;
 	TH2D* histoN = new TH2D("histoN" , ";I;J" , 100 , 0 , 100 , 100 , 0 , 100) ;
 
@@ -151,7 +154,7 @@ int main(int argc , char** argv)
 		unsigned int n ;
 		double m ;
 		std::tie(n ,  m) = it.second ;
-		histoMul->Fill( it.first.i , it.first.j , m/n) ;
+		histoMul->Fill( it.first.i*10.408 , it.first.j*10.408 , m/n) ;
 	}
 
 	for (const auto& it : globalEff3Map)
@@ -174,11 +177,32 @@ int main(int argc , char** argv)
 
 	gStyle->SetOptStat(0) ;
 	TCanvas* cMul = new TCanvas("cMul" , "cMul" , 900 , 900) ;
-	cMul->SetLeftMargin(0.08f) ;
+	cMul->SetLeftMargin(0.12f) ;
 	cMul->SetRightMargin(0.12f) ;
+	cMul->SetTopMargin(0.12f) ;
+	cMul->SetBottomMargin(0.12f) ;
 	cMul->cd() ;
 	histoMul->SetContour(99) ;
+	histoMul->GetYaxis()->SetTitleOffset(1.5f) ;
 	histoMul->Draw("colz") ;
+
+	TText* text = new TText(0.12 , 0.89 , "Multiplicity" ) ;
+	text->SetNDC() ;
+	text->SetTextAlign(11) ;
+	text->SetTextColor(kGray+2) ;
+	text->SetTextFont(63) ;
+	text->SetTextSize(30) ;
+	text->Draw() ;
+
+	TText* text2 = new TText(0.88 , 0.89 , "Homogenous" ) ;
+	text2->SetNDC() ;
+	text2->SetTextAlign(31) ;
+	text2->SetTextColor(kGray+2) ;
+	text2->SetTextFont(63) ;
+	text2->SetTextSize(30) ;
+	text2->Draw() ;
+
+
 	cMul->SaveAs("mul.png") ;
 
 	TCanvas* cEff3 = new TCanvas("cEff3" , "cEff3" , 900 , 900) ;

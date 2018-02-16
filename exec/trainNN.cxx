@@ -21,14 +21,14 @@
 
 bool cut(const Event& event)
 {
-	bool keepHadronCut = event.nTrack > 0 ;
+//	bool keepHadronCut = event.nTrack > 0 ;
 	bool cut = event.neutral == 0 && event.transverseRatio > 0.05f ;
 
 	bool muonCut = ( 1.0*event.nInteractingLayer/event.nLayer > 0.2 ) && ( 1.0*event.nHit/event.nLayer > 3 ) ;
 
-//	bool beginCut = event.begin < 1000 ;
-	//	return ( cut && muonCut && keepHadronCut && beginCut ) ;
-	return ( cut && muonCut && keepHadronCut ) ;
+	bool beginCut = event.begin > -10 ;
+		return ( cut && muonCut && beginCut ) ;
+//	return ( cut && muonCut && keepHadronCut ) ;
 }
 
 int main( )
@@ -124,7 +124,7 @@ int main( )
 	dataloader->AddVariable("nHit2" , 'F') ;
 	dataloader->AddVariable("nHit3" , 'F') ;
 	dataloader->AddVariable("density" , 'F') ;
-//	dataloader->AddVariable("begin" , 'F') ;
+	dataloader->AddVariable("begin" , 'F') ;
 	dataloader->AddVariable("end" , 'F') ;
 
 	//	dataloader->AddVariable("emFraction" , 'F') ;

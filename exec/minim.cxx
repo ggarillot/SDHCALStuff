@@ -107,6 +107,7 @@ int main(int argc , char** argv)
 
 		if ( cheatVec.at(i) == true )
 		{
+			minimizersVec.at(i)->createHistos() ;
 			minimizersVec.at(i)->fitForCheat() ;
 			minimizersVec.at(i)->minimize() ;
 		}
@@ -115,15 +116,13 @@ int main(int argc , char** argv)
 		minimizersVec.at(i)->writeHistos() ;
 	}
 
-
-	std::vector<Fit*> fitVec {} ;
-
+	std::vector<Fit> fitVec {} ;
 	for ( unsigned int i = 0 ; i < minimizersVec.size() ; ++i )
-		fitVec.push_back( minimizersVec.at(i)->getFitPtr() ) ;
-
-	for ( unsigned int i = 0 ; i < fitVec.size() ; ++i )
-		fitVec.at(i)->fitAllHistos() ;
-
+	{
+		fitVec.push_back( Fit() ) ;
+		fitVec.back().loadHistos(minimizersVec.at(i)->getHistos()) ;
+		fitVec.back().fitAllHistos() ;
+	}
 
 	TFile* file = new TFile(graphName.c_str() , "RECREATE") ;
 
@@ -158,7 +157,7 @@ int main(int argc , char** argv)
 	std::vector<TGraphErrors*> linGraphVec {} ;
 
 	for ( unsigned int i = 0 ; i < fitVec.size() ; ++i )
-		linGraphVec.push_back( fitVec.at(i)->getLin() ) ;
+		linGraphVec.push_back( fitVec.at(i).getLin() ) ;
 
 	for ( unsigned int i = 0 ; i < linGraphVec.size() ; ++i )
 	{
@@ -208,7 +207,7 @@ int main(int argc , char** argv)
 	std::vector<TGraphErrors*> linDevGraphVec {} ;
 
 	for ( unsigned int i = 0 ; i < fitVec.size() ; ++i )
-		linDevGraphVec.push_back( fitVec.at(i)->getLinDev() ) ;
+		linDevGraphVec.push_back( fitVec.at(i).getLinDev() ) ;
 
 	for ( unsigned int i = 0 ; i < linDevGraphVec.size() ; ++i )
 	{
@@ -244,7 +243,7 @@ int main(int argc , char** argv)
 	std::vector<TGraphErrors*> resolGraphVec {} ;
 
 	for ( unsigned int i = 0 ; i < fitVec.size() ; ++i )
-		resolGraphVec.push_back( fitVec.at(i)->getResol() ) ;
+		resolGraphVec.push_back( fitVec.at(i).getResol() ) ;
 
 
 	for ( unsigned int i = 0 ; i < resolGraphVec.size() ; ++i )
@@ -268,8 +267,11 @@ int main(int argc , char** argv)
 
 	file->Close() ;
 
+	std::cout << "delete minimizers" << std::endl ;
 	for ( auto minimizer : minimizersVec )
 		delete minimizer ;
+
+	std::cout << "after delete minimizers" << std::endl ;
 
 	return 0 ;
 }

@@ -27,9 +27,9 @@ bool cut(const Event& event)
 
 	bool muonCut = ( 1.0*event.nInteractingLayer/event.nLayer > 0.2 ) && ( 1.0*event.nHit/event.nLayer > 3 ) ;
 
-//	bool beginCut = event.begin < 1000 ;
+	bool beginCut = event.begin > -10 ;
 	//	return ( cut && muonCut && keepHadronCut && beginCut ) ;
-	return ( cut && muonCut && keepHadronCut ) ;
+	return ( cut && muonCut && keepHadronCut && beginCut ) ;
 }
 
 int main()
@@ -44,7 +44,7 @@ int main()
 //	float nHitnHit ;
 //	float energy ;
 //	float emFraction ;
-//	float begin ;
+	float begin ;
 	float end ;
 
 	reader->AddVariable("nHit" , &nHit) ;
@@ -52,16 +52,16 @@ int main()
 	reader->AddVariable("nHit2" , &nHit2) ;
 	reader->AddVariable("nHit3" , &nHit3) ;
 	reader->AddVariable("density" , &density) ;
-//	reader->AddVariable("begin" , &begin) ;
+	reader->AddVariable("begin" , &begin) ;
 	reader->AddVariable("end" , &end) ;
 //	reader->AddVariable("emFraction" , &emFraction) ;
 	//	reader->AddVariable("nHit*nHit" , &nHitnHit) ;
 
 	TString methodName = "MLP method" ;
 
-	reader->BookMVA( methodName , "/home/garillot/Code/Minimisation/dataset/weights/TMVARegression_MLP.weights.xml" ) ;
+	reader->BookMVA( methodName , "/home/garillot/Code/SDHCALStuff/dataset/weights/TMVARegression_MLP.weights.xml" ) ;
 
-	std::map<float,TH1*> histoMap ;
+	std::map<float,std::shared_ptr<TH1>> histoMap ;
 
 	for ( int i = 10 ; i < 81 ; i += 10 )
 	{
@@ -85,12 +85,12 @@ int main()
 		//		event.setBranchAddress(tree) ;
 
 
-		std::map<float,TH1*>::iterator it = histoMap.find(i) ;
+		auto it = histoMap.find(i) ;
 
 		if ( it == histoMap.end() )
 		{
 			std::stringstream histoName ; histoName << i << "GeV" ;
-			histoMap[i] = new TH1D( histoName.str().c_str() , histoName.str().c_str() , 100 , 0 , 2*i ) ;
+			histoMap[i] = std::shared_ptr<TH1>( new TH1D( histoName.str().c_str() , histoName.str().c_str() , 100 , 0 , 2*i ) ) ;
 			histoMap[i]->SetDirectory(0) ;
 			it = histoMap.find(i) ;
 		}
@@ -110,7 +110,7 @@ int main()
 			density = static_cast<float>( event.density ) ;
 //			nHitnHit = nHit*nHit ;
 //			emFraction = static_cast<float>(event.emFraction) ;
-//			begin = static_cast<float>(event.begin) ;
+			begin = static_cast<float>(event.begin) ;
 			end = static_cast<float>(event.end) ;
 			it->second->Fill( static_cast<double>(reader->EvaluateRegression( methodName )[0] ) ) ;
 		}
@@ -131,16 +131,13 @@ int main()
 	TFile* histoFile = new TFile("histo.root" , "RECREATE") ;
 	histoFile->cd() ;
 
-	for ( std::map<float,TH1*>::iterator it = histoMap.begin() ; it != histoMap.end() ; ++it )
+	for ( auto it = histoMap.begin() ; it != histoMap.end() ; ++it )
 		it->second->Write() ;
 
 	histoFile->Close() ;
 
-//	for( auto it = histoMap.begin() ; it != histoMap.end() ; ++it )
-//		delete it->second ;
 
-	for(auto& it : histoMap)
-		delete it.second ;
+	histoMap.clear() ;
 
 
 	delete reader ;

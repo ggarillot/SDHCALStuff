@@ -12,12 +12,10 @@
 #include <TGraphErrors.h>
 #include <TF1.h>
 
-using namespace std ;
-
 EnergyMinimisation::EnergyMinimisation(unsigned int nParam_ , std::string name_)
 	: Minimisation(nParam_) , name(name_) ,
-	  eventReader() ,
-	  fit()
+	  eventReader()
+//	  fit()
 {
 	std::cout << "Initialize " << name << " energy minimizer" << std::endl ;
 }
@@ -127,7 +125,7 @@ double EnergyMinimisation::functionToMinimize(const double* param)
 {
 	double chi2 = 0 ;
 
-	for( vector<Event>::const_iterator it = eventListForMinim.begin() ; it != eventListForMinim.end() ; ++it )
+	for( std::vector<Event>::const_iterator it = eventListForMinim.begin() ; it != eventListForMinim.end() ; ++it )
 	{
 		const Event& event = *it ;
 		double estimEnergy = estimFunc(param , event) ;
@@ -149,10 +147,12 @@ double EnergyMinimisation::targetEnergy(double _energy) const
 
 void EnergyMinimisation::fitForCheat()
 {
-	fit.loadHistos( createHistos() ) ;
-	fit.fitAllHistos() ;
+	std::cout << "Minimizer " << name << " fit for cheat" << std::endl ;
+	Fit fita ;
+	fita.loadHistos(histoMap) ;
+	fita.fitAllHistos() ;
 
-	TGraphErrors* lin = fit.getLin() ;
+	TGraphErrors* lin = fita.getLin() ;
 
 	TF1* f = new TF1("f" , "[0] + [1]*x + [2]*x*x + [3]*x*x*x") ;
 	lin->Fit(f) ;
@@ -163,18 +163,18 @@ void EnergyMinimisation::fitForCheat()
 
 double EnergyMinimisation::minimize()
 {
-	cout << "Minimisation over " << eventListForMinim.size() << " entries" << endl ;
-	cout << nEventsPerEnergyMap.size() << " different energies" << endl ;
-	cout << endl ;
+	std::cout << "Minimisation over " << eventListForMinim.size() << " entries" << std::endl ;
+	std::cout << nEventsPerEnergyMap.size() << " different energies" << std::endl ;
+	std::cout << std::endl ;
 
 	return Minimisation::minimize() ;
 }
 
-std::map<float,TH1*> EnergyMinimisation::createHistos()
+void EnergyMinimisation::createHistos()
 {
-	map<float,TH1*> histoMap ;
+	histoMap.clear() ;
 
-	for (vector<Event>::const_iterator it = eventList.begin() ; it != eventList.end() ; ++it)
+	for (std::vector<Event>::const_iterator it = eventList.begin() ; it != eventList.end() ; ++it)
 	{
 		Event event = *it ;
 		if ( !cut(event) )
@@ -182,39 +182,28 @@ std::map<float,TH1*> EnergyMinimisation::createHistos()
 
 		if ( !histoMap.count(event.energy) )
 		{
-			stringstream toto ;
+			std::stringstream toto ;
 			toto << event.energy << "GeV" ;
-			histoMap[event.energy] = new TH1D( toto.str().c_str() , toto.str().c_str() , 100 , 0 , 2*event.energy) ;
+			histoMap[event.energy] = std::shared_ptr<TH1>( new TH1D( toto.str().c_str() , toto.str().c_str() , 100 , 0 , 2*event.energy) ) ;
+			histoMap[event.energy]->SetDirectory(0) ;
 		}
 		histoMap[event.energy]->Fill( estimFunc(&bestParam[0] , event) ) ;
 	}
-
-	fit.loadHistos(histoMap) ;
-	return histoMap ;
 }
 
 void EnergyMinimisation::writeHistos()
 {
-	map<float,TH1*> histoMap = createHistos() ;
-
-	stringstream fileName ;
+	std::stringstream fileName ;
 	fileName << "histos_" << name << ".root" ;
 	TFile* histoFile = new TFile(fileName.str().c_str() , "RECREATE") ;
 	histoFile->cd() ;
 
-	for ( map<float,TH1*>::iterator it = histoMap.begin() ; it != histoMap.end() ; ++it )
+	for ( auto it = histoMap.begin() ; it != histoMap.end() ; ++it )
 		it->second->Write() ;
 
 	histoFile->Close() ;
 }
 
-void EnergyMinimisation::drawResults()
-{
-	fit.fitAllHistos() ;
-	fit.drawLin() ;
-	fit.drawLinDev() ;
-	fit.drawResol() ;
-}
 
 double LinearMinimisation::estimFunc(const double* param , Event _event) const
 {

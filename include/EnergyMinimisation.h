@@ -12,6 +12,7 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <memory>
 
 
 class EnergyMinimisation : public Minimisation
@@ -34,17 +35,17 @@ class EnergyMinimisation : public Minimisation
 
 		std::string getName() { return name ; }
 
-		std::map<float,TH1*> createHistos() ;
+		void createHistos() ;
 		void writeHistos() ;
 
-		void drawResults() ;
+		std::map<float,std::shared_ptr<TH1>> const getHistos() { return histoMap ; }
 
 		double targetEnergy(double _energy) const ;
 
 		void fitForCheat() ;
 
-		inline Fit& getFit() { return fit ; }
-		inline Fit* getFitPtr() { return &fit ; }
+//		inline Fit& getFit() { return fit ; }
+//		inline Fit* getFitPtr() { return &fit ; }
 
 		void setName(std::string _name) { name = _name ; }
 
@@ -60,10 +61,12 @@ class EnergyMinimisation : public Minimisation
 		int nEventsPerEnergy = 3000 ;
 		std::map<float,int> nEventsPerEnergyMap = {} ;
 
+		std::map<float,std::shared_ptr<TH1>> histoMap = {} ;
+
 		std::vector<TFile*> fileVec = {} ;
 		std::vector<TTree*> treeVec = {} ;
 
-		Fit fit ;
+//		Fit fit ;
 
 		double cheat[4] = {0,1,0,0} ; //to improve linearity
 
@@ -96,34 +99,34 @@ class QuadMinimisation : public EnergyMinimisation
 class LinearDensityMinimisation : public EnergyMinimisation
 {
 	public :
-				LinearDensityMinimisation(std::string name_ = "LinearDensity") : EnergyMinimisation(27, name_)
-				{
-					limitsParam = std::vector<Limits>(nParam , kPositive) ;
+		LinearDensityMinimisation(std::string name_ = "LinearDensity") : EnergyMinimisation(27, name_)
+		{
+			limitsParam = std::vector<Limits>(nParam , kPositive) ;
 
-					for ( unsigned int i = 0 ; i < 9 ; ++i )
-					{
-						std::stringstream alpha ; alpha << "alpha" << i ;
-						std::stringstream beta ; beta << "beta" << i ;
-						std::stringstream gamma ; gamma << "gamma" << i ;
+			for ( unsigned int i = 0 ; i < 9 ; ++i )
+			{
+				std::stringstream alpha ; alpha << "alpha" << i ;
+				std::stringstream beta ; beta << "beta" << i ;
+				std::stringstream gamma ; gamma << "gamma" << i ;
 
-						nameParam[i] = alpha.str() ;
-						nameParam[i+9] = beta.str() ;
-						nameParam[i+18] = gamma.str() ;
-					}
-				}
-//		LinearDensityMinimisation(std::string name_ = "LinearDensity") : EnergyMinimisation(12, name_)
-//		{
-//			limitsParam = std::vector<Limits>(nParam , kPositive) ;
+				nameParam[i] = alpha.str() ;
+				nameParam[i+9] = beta.str() ;
+				nameParam[i+18] = gamma.str() ;
+			}
+		}
+		//		LinearDensityMinimisation(std::string name_ = "LinearDensity") : EnergyMinimisation(12, name_)
+		//		{
+		//			limitsParam = std::vector<Limits>(nParam , kPositive) ;
 
-//			for ( unsigned int i = 0 ; i < 9 ; ++i )
-//			{
-//				std::stringstream gamma ; gamma << "d" << i+1 ;
-//				nameParam[i] = gamma.str() ;
-//			}
-//			nameParam[9] = "alpha" ;
-//			nameParam[10] = "beta" ;
-//			nameParam[11] = "gamma" ;
-//		}
+		//			for ( unsigned int i = 0 ; i < 9 ; ++i )
+		//			{
+		//				std::stringstream gamma ; gamma << "d" << i+1 ;
+		//				nameParam[i] = gamma.str() ;
+		//			}
+		//			nameParam[9] = "alpha" ;
+		//			nameParam[10] = "beta" ;
+		//			nameParam[11] = "gamma" ;
+		//		}
 
 		double estimFunc(const double* param , Event _event) const ;
 } ;
