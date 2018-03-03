@@ -51,6 +51,8 @@ class EnergyMinimisation : public Minimisation
 
 		void setGeomCut(std::array<double,3> _geomCut) { geomCut = _geomCut ; }
 
+		void setCheatIntensity(float intensity) { cheatIntensity = intensity ; }
+
 	protected :
 		std::string name ;
 
@@ -68,6 +70,7 @@ class EnergyMinimisation : public Minimisation
 
 //		Fit fit ;
 
+		float cheatIntensity = 1.0f ;
 		double cheat[4] = {0,1,0,0} ; //to improve linearity
 
 		std::array<double,3> geomCut = {{0,0,0}} ;

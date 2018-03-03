@@ -118,7 +118,9 @@ bool EnergyMinimisation::cut(Event event) const
 
 	bool cut = ( event.transverseRatio > 0.05f && event.neutral == 0 && event.nTrack > 0 && double(event.nHit)/event.nLayer > 2.2 && double(event.nInteractingLayer)/event.nLayer > 0.2 ) ;
 
-	return ( cut && beamCut && timeCut ) ;
+	bool elecCut = ( event.begin > 5 || event.nLayer > 30 ) ;
+
+	return ( cut && beamCut && timeCut && elecCut ) ;
 }
 
 double EnergyMinimisation::functionToMinimize(const double* param)
@@ -142,12 +144,12 @@ double EnergyMinimisation::functionToMinimize(const double* param)
 
 double EnergyMinimisation::targetEnergy(double _energy) const
 {
-	return 2*_energy - (cheat[0] + cheat[1]*_energy + cheat[2]*_energy*_energy + cheat[3]*_energy*_energy*_energy) ;
+	return (1.f+cheatIntensity)*_energy - cheatIntensity*(cheat[0] + cheat[1]*_energy + cheat[2]*_energy*_energy + cheat[3]*_energy*_energy*_energy) ;
 }
 
 void EnergyMinimisation::fitForCheat()
 {
-	std::cout << "Minimizer " << name << " fit for cheat" << std::endl ;
+	std::cout << "Minimizer " << name << " fit for cheat with intensity : " << cheatIntensity << std::endl ;
 	Fit fita ;
 	fita.loadHistos(histoMap) ;
 	fita.fitAllHistos() ;

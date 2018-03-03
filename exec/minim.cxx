@@ -28,6 +28,7 @@ int main(int argc , char** argv)
 
 	std::vector<EnergyMinimisation*> minimizersVec {} ;
 	std::vector<bool> cheatVec {} ;
+	std::vector<bool> minimizeVec {} ;
 	std::vector<Color_t> colorVec {kRed-4 , kBlue-4 , kGreen+2 , kCyan+2} ;
 
 	std::string jsonFileName = argv[1] ;
@@ -95,21 +96,42 @@ int main(int argc , char** argv)
 		}
 		else
 			cheatVec.push_back(false) ;
+
+		if ( i.count("minimize") )
+		{
+			if (i.at("minimize") == "true")
+				minimizeVec.push_back(true) ;
+			else
+				minimizeVec.push_back(false) ;
+		}
+		else
+			minimizeVec.push_back(true) ;
+
+
+		if ( i.count("cheatIntensity") )
+		{
+			auto cheatIntensity = i.at("cheatIntensity") ;
+			minimizer->setCheatIntensity(cheatIntensity) ;
+		}
 	}
 
 	jsonFile.close() ;
 
 	assert( minimizersVec.size() == cheatVec.size() ) ;
+	assert( minimizersVec.size() == minimizeVec.size() ) ;
 
 	for ( unsigned int i = 0 ; i < minimizersVec.size() ; ++i )
 	{
-		minimizersVec.at(i)->minimize() ;
-
-		if ( cheatVec.at(i) == true )
+		if ( minimizeVec.at(i) == true )
 		{
-			minimizersVec.at(i)->createHistos() ;
-			minimizersVec.at(i)->fitForCheat() ;
 			minimizersVec.at(i)->minimize() ;
+
+			if ( cheatVec.at(i) == true )
+			{
+				minimizersVec.at(i)->createHistos() ;
+				minimizersVec.at(i)->fitForCheat() ;
+				minimizersVec.at(i)->minimize() ;
+			}
 		}
 
 		minimizersVec.at(i)->createHistos() ;
