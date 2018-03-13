@@ -29,7 +29,7 @@ int main(int argc , char** argv)
 	std::vector<EnergyMinimisation*> minimizersVec {} ;
 	std::vector<bool> cheatVec {} ;
 	std::vector<bool> minimizeVec {} ;
-	std::vector<Color_t> colorVec {kRed-4 , kBlue-4 , kGreen+2 , kCyan+2} ;
+	std::vector<Color_t> colorVec {kRed-4 , kBlue-6 , kGreen+3 , kCyan+2} ;
 
 	std::string jsonFileName = argv[1] ;
 
@@ -136,6 +136,8 @@ int main(int argc , char** argv)
 
 		minimizersVec.at(i)->createHistos() ;
 		minimizersVec.at(i)->writeHistos() ;
+
+		minimizersVec.at(i)->printParam() ;
 	}
 
 	std::vector<Fit> fitVec {} ;

@@ -93,8 +93,14 @@ double Minimisation::minimize()
 
 void Minimisation::printParam() const
 {
+	std::cout << "\"parameters\": [" ;
 	for (unsigned int i = 0 ; i < nParam ; i++ )
-		cout << bestParam[i] << endl ;
+	{
+		std::cout << bestParam[i] ;
+		if ( i < nParam - 1 )
+			std::cout << "," ;
+	}
+	std::cout << "]" << std::endl ;
 }
 
 void Minimisation::setParams(std::vector<double> values)
