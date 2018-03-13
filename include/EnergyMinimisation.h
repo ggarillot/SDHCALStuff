@@ -4,6 +4,7 @@
 #include "Minimisation.h"
 #include "Event.h"
 #include "Fit.h"
+#include "EventList.h"
 
 #include <TFile.h>
 #include <TTree.h>
@@ -19,13 +20,9 @@ class EnergyMinimisation : public Minimisation
 {
 	public :
 		EnergyMinimisation(unsigned int nParam_ , std::string name_) ;
-
 		virtual ~EnergyMinimisation() ;
 
-		virtual bool cut(Event event) const ;
-
-		void loadFile(std::string fileName) ;
-		void loadFile(std::string fileName , unsigned long long beginTime , unsigned long long endTime) ;
+		void loadEvents(const std::vector<EventList>& eventListVec ) ;
 
 
 		double functionToMinimize(const double* param) ;
@@ -44,40 +41,25 @@ class EnergyMinimisation : public Minimisation
 
 		void fitForCheat() ;
 
-//		inline Fit& getFit() { return fit ; }
-//		inline Fit* getFitPtr() { return &fit ; }
-
 		void setName(std::string _name) { name = _name ; }
 
-		void setGeomCut(std::array<double,3> _geomCut) { geomCut = _geomCut ; }
+
 
 		void setCheatIntensity(float intensity) { cheatIntensity = intensity ; }
 
 	protected :
 		std::string name ;
 
-		EventReader eventReader ;
-		std::vector<Event> eventList = {} ;
-		std::vector<Event> eventListForMinim = {} ;
+		std::vector<Event> events = {} ;
+		std::vector<Event> eventsForMinim = {} ;
 
 		int nEventsPerEnergy = 3000 ;
 		std::map<float,int> nEventsPerEnergyMap = {} ;
 
 		std::map<float,std::shared_ptr<TH1>> histoMap = {} ;
 
-		std::vector<TFile*> fileVec = {} ;
-		std::vector<TTree*> treeVec = {} ;
-
-//		Fit fit ;
-
 		float cheatIntensity = 1.0f ;
 		double cheat[4] = {0,1,0,0} ; //to improve linearity
-
-		std::array<double,3> geomCut = {{0,0,0}} ;
-		double beginSpillCut = 0 ;
-		double endSpillCut = 50e6 ;
-
-
 } ;
 
 class LinearMinimisation : public EnergyMinimisation

@@ -4,6 +4,7 @@
 
 #include "EnergyMinimisation.h"
 #include "Event.h"
+#include "EventList.h"
 
 #include <TFile.h>
 #include <TStyle.h>
@@ -38,6 +39,50 @@ int main(int argc , char** argv)
 	auto json = nlohmann::json::parse(jsonFile) ;
 
 	std::string graphName = json.at("graphFileName") ;
+
+	std::map<std::string , EventList> eventListMap = {} ;
+
+	auto eventListList = json.at("eventLists") ;
+	for ( const auto& i : eventListList )
+	{
+		EventList eventList ;
+		if ( i.count("geomCut") )
+		{
+			auto geomCut = i.at("geomCut") ;
+			eventList.setGeomCut({{ geomCut.at("x") , geomCut.at("y") , geomCut.at("radius") }}) ;
+		}
+
+		auto files = i.at("files") ;
+
+		std::string dir = "" ;
+		if ( files.count("dir") )
+			dir = files.at("dir") ;
+
+		auto files2 = files.at("files") ;
+
+		for ( const auto& file : files2 )
+		{
+			std::string fileName = file.at("file") ;
+			if ( file.count("spillBegin") )
+				eventList.loadFile( dir + "/" + fileName , file.at("spillBegin") , file.at("spillEnd") ) ;
+			else
+				eventList.loadFile( dir + "/" + fileName ) ;
+		}
+
+
+		std::string name = i.at("name") ;
+
+		if ( eventListMap.count(name) )
+		{
+			std::cerr << "ERROR : 2 eventLists have the same name" << std::endl ;
+			return 1 ;
+		}
+		eventListMap.insert( {name , eventList} ) ;
+	}
+
+	std::cout << "1" << std::endl ;
+	getchar() ;
+
 	auto minimizersList = json.at("minimizers") ;
 
 	for ( const auto& i : minimizersList )
@@ -54,28 +99,16 @@ int main(int argc , char** argv)
 		else if ( method == "LinearDensity" )
 			minimizer = new LinearDensityMinimisation(name) ;
 
-		if ( i.count("geomCut") )
-		{
-			auto geomCut = i.at("geomCut") ;
-			minimizer->setGeomCut({{ geomCut.at("x") , geomCut.at("y") , geomCut.at("radius") }}) ;
-		}
 
-		auto files = i.at("files") ;
+		auto events = i.at("eventLists") ;
+		std::vector<EventList> vec = {} ;
 
-		std::string dir = "" ;
-		if ( files.count("dir") )
-			dir = files.at("dir") ;
+		for ( std::string j : events )
+			vec.push_back( eventListMap.at(j) ) ;
 
-		auto files2 = files.at("files") ;
+		minimizer->loadEvents( vec ) ;
 
-		for ( const auto& file : files2 )
-		{
-			std::string fileName = file.at("file") ;
-			if ( file.count("spillBegin") )
-				minimizer->loadFile( dir + "/" + fileName , file.at("spillBegin") , file.at("spillEnd") ) ;
-			else
-				minimizer->loadFile( dir + "/" + fileName ) ;
-		}
+
 
 		if ( i.count("parameters") )
 		{
@@ -115,7 +148,15 @@ int main(int argc , char** argv)
 		}
 	}
 
+	std::cout << "2" << std::endl ;
+	getchar() ;
+
 	jsonFile.close() ;
+
+	eventListMap.clear() ;
+
+	std::cout << "3" << std::endl ;
+	getchar() ;
 
 	assert( minimizersVec.size() == cheatVec.size() ) ;
 	assert( minimizersVec.size() == minimizeVec.size() ) ;
