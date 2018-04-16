@@ -1,21 +1,6 @@
 #include "Event.h"
 
 
-using namespace std ;
-
-Event::Event()
-{
-}
-
-EventReader::EventReader()
-{
-}
-
-EventReader::~EventReader()
-{
-}
-
-
 Event EventReader::getEvent(Long64_t entry, bool computeDensity)
 {
 	Event event ;
@@ -52,22 +37,19 @@ Event EventReader::getEvent(Long64_t entry, bool computeDensity)
 	for ( int i = 0 ; i < 4 ; ++i )
 		event.cog[i] = cog[i] ;
 
-	event.longiProfile = *longiProfile ;
-	event.radiProfile = *radiProfile ;
+//	event.longiProfile = std::vector<double>(*longiProfile) ;
+//	event.radiProfile = std::vector<double>(*radiProfile) ;
 
 	event.spillEventTime = spillEventTime ;
 
 	event.emFraction = emFraction ;
 
-	event.thr = *thr ;
-	event.densityPerHit = *densityPerHit ;
-
 	if ( computeDensity )
 	{
-		for ( unsigned int i = 0 ; i < event.thr.size() ; ++i )
+		for ( unsigned int i = 0 ; i < (*thr).size() ; ++i )
 		{
-			unsigned int _thr = static_cast<unsigned int>( event.thr[i] ) ;
-			unsigned int _density = static_cast<unsigned int>( event.densityPerHit[i] ) ;
+			unsigned int _thr = static_cast<unsigned int>( (*thr)[i] ) ;
+			unsigned int _density = static_cast<unsigned int>( (*densityPerHit)[i] ) ;
 
 			event.hitThrDensity.at(0).at(0) ++ ;
 			event.hitThrDensity.at(0).at(_density) ++ ;
@@ -151,7 +133,4 @@ void EventReader::setTreeWrite(TTree* _tree)
 
 	_tree->Branch("emFraction" , &emFraction) ;
 	_tree->Branch("thrust" , &cog , "thrust/D") ;
-
-	_tree->Branch("thr" , &thr) ;
-	_tree->Branch("hitDensity" , &densityPerHit) ;
 }

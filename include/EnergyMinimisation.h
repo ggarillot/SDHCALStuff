@@ -50,8 +50,8 @@ class EnergyMinimisation : public Minimisation
 	protected :
 		std::string name ;
 
-		std::vector<Event> events = {} ;
-		std::vector<Event> eventsForMinim = {} ;
+		std::vector<std::shared_ptr<Event>> events = {} ;
+		std::vector<std::shared_ptr<Event>> eventsForMinim = {} ;
 
 		int nEventsPerEnergy = 3000 ;
 		std::map<float,int> nEventsPerEnergyMap = {} ;

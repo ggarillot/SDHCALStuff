@@ -4,6 +4,8 @@
 #include <TF1.h>
 #include <TProfile.h>
 
+#include <memory>
+
 #include "Event.h"
 #include "HistoCreator.h"
 
@@ -18,7 +20,10 @@ class TimeCorrection
 
 		void correct(std::vector<Event>& eventList, int polOrder = 2) ;
 
+		void correctProfiles(std::vector<Event>& eventList) ;
+
 		void correctThrDensity(std::vector<Event>& eventList, int polOrder = 2) ;
+		void correctThrDensity(std::vector<std::shared_ptr<Event>>& eventList, int polOrder = 2) ;
 
 	protected :
 		unsigned long long beginTime = 0 ;

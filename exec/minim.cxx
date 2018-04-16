@@ -18,6 +18,7 @@
 #include <string>
 #include <cstdlib>
 #include <cassert>
+#include <memory>
 
 int main(int argc , char** argv)
 {
@@ -45,7 +46,7 @@ int main(int argc , char** argv)
 	auto eventListList = json.at("eventLists") ;
 	for ( const auto& i : eventListList )
 	{
-		EventList eventList ;
+		auto eventList = EventList() ;
 		if ( i.count("geomCut") )
 		{
 			auto geomCut = i.at("geomCut") ;
@@ -79,9 +80,6 @@ int main(int argc , char** argv)
 		}
 		eventListMap.insert( {name , eventList} ) ;
 	}
-
-	std::cout << "1" << std::endl ;
-	getchar() ;
 
 	auto minimizersList = json.at("minimizers") ;
 
@@ -148,15 +146,8 @@ int main(int argc , char** argv)
 		}
 	}
 
-	std::cout << "2" << std::endl ;
-	getchar() ;
-
 	jsonFile.close() ;
-
 	eventListMap.clear() ;
-
-	std::cout << "3" << std::endl ;
-	getchar() ;
 
 	assert( minimizersVec.size() == cheatVec.size() ) ;
 	assert( minimizersVec.size() == minimizeVec.size() ) ;

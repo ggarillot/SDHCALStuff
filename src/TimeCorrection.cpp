@@ -167,6 +167,11 @@ void TimeCorrection::correct(std::vector<Event>& eventList , int polOrder)
 	}
 }
 
+void TimeCorrection::correctProfiles(std::vector<Event>& eventList)
+{
+
+}
+
 void TimeCorrection::correctThrDensity(std::vector<Event>& eventList, int polOrder)
 {
 	double timeOfSpill = (endTime-beginTime)*200e-9 ;
@@ -220,6 +225,69 @@ void TimeCorrection::correctThrDensity(std::vector<Event>& eventList, int polOrd
 		for ( unsigned int i = 0 ; i < 4 ; ++i )
 			for ( unsigned int j = 0 ; j < 10 ; ++j )
 				event.hitThrDensity.at(i).at(j) -= ( fitArray.at(i).at(j)->Eval(time) - fitArray.at(i).at(j)->GetParameter(0) ) ;
+	}
+
+	for ( unsigned int i = 0 ; i < 4 ; ++i )
+		for ( unsigned int j = 0 ; j < 10 ; ++j )
+		{
+			delete fitArray.at(i).at(j) ;
+			delete profileArray.at(i).at(j) ;
+		}
+}
+
+void TimeCorrection::correctThrDensity(std::vector<std::shared_ptr<Event>>& eventList, int polOrder)
+{
+	double timeOfSpill = (endTime-beginTime)*200e-9 ;
+
+	std::array< std::array<TProfile*,10> , 4 > profileArray = {{}} ;
+	for ( unsigned int i = 0 ; i < 4 ; ++i )
+		for ( unsigned int j = 0 ; j < 10 ; ++j )
+		{
+			std::stringstream toto ; toto << "prof" << i << j ;
+			profileArray.at(i).at(j) = new TProfile(toto.str().c_str() , toto.str().c_str() , 50 , 0 , timeOfSpill ) ;
+		}
+
+
+	for ( const auto& event : eventList )
+	{
+		double time = (event->spillEventTime - beginTime)*200e-9 ;
+
+		for ( unsigned int i = 0 ; i < 4 ; ++i )
+			for ( unsigned int j = 0 ; j < 10 ; ++j )
+				profileArray.at(i).at(j)->Fill(time , event->hitThrDensity.at(i).at(j)) ;
+	}
+
+	std::stringstream funcStr ;
+
+	for (int i = 0 ; i <= polOrder ; ++i )
+	{
+		if ( i > 0 )
+			funcStr << " + " ;
+
+		funcStr << "[" << i << "] " ;
+
+		for ( int j = 0 ; j < i ; ++j )
+			funcStr << "*x" ;
+	}
+
+	std::array< std::array<TF1*,10> , 4 > fitArray = {{}} ;
+	for ( unsigned int i = 0 ; i < 4 ; ++i )
+		for ( unsigned int j = 0 ; j < 10 ; ++j )
+		{
+			std::stringstream toto ; toto << "fit" << i << j ;
+			fitArray.at(i).at(j) = new TF1(toto.str().c_str() , funcStr.str().c_str() ) ;
+
+			profileArray.at(i).at(j)->Fit(fitArray.at(i).at(j) , "QB") ;
+		}
+
+
+	for ( auto& event : eventList )
+	{
+		double time = (event->spillEventTime - beginTime)*200e-9 ;
+
+		for ( unsigned int i = 0 ; i < 4 ; ++i )
+			for ( unsigned int j = 0 ; j < 10 ; ++j )
+				event->hitThrDensity.at(i).at(j) -= ( fitArray.at(i).at(j)->Eval(time) - fitArray.at(i).at(j)->GetParameter(0) ) ;
 	}
 
 	for ( unsigned int i = 0 ; i < 4 ; ++i )

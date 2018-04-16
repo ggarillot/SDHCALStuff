@@ -13,7 +13,8 @@
 
 struct Event
 {
-		Event() ;
+//		Event() = default ;
+//		~Event() = default ;
 
 		float energy = 0 ;
 		int nHit = 0 ;
@@ -49,17 +50,14 @@ struct Event
 
 		double emFraction = 0 ;
 
-		std::vector<float> thr = {} ;
-		std::vector<float> densityPerHit = {} ;
-
 		std::array< std::array<int,10> , 4 > hitThrDensity = {{}} ;
 } ;
 
 class EventReader
 {
 	public :
-		EventReader() ;
-		~EventReader() ;
+		EventReader() = default ;
+		~EventReader() = default ;
 
 		Event getEvent(Long64_t entry , bool computeDensity = false) ;
 

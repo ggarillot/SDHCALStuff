@@ -37,12 +37,12 @@ void EnergyMinimisation::loadEvents( const std::vector<EventList>& eventListVec 
 
 	for ( const auto& event : events )
 	{
-		if ( !nEventsPerEnergyMap.count(event.energy) )
-			nEventsPerEnergyMap[ event.energy ] = 0 ;
+		if ( !nEventsPerEnergyMap.count(event->energy) )
+			nEventsPerEnergyMap[ event->energy ] = 0 ;
 
-		if ( nEventsPerEnergyMap[ event.energy ] < nEventsPerEnergy )
+		if ( nEventsPerEnergyMap[ event->energy ] < nEventsPerEnergy )
 		{
-			nEventsPerEnergyMap[ event.energy ]++ ;
+			nEventsPerEnergyMap[ event->energy ]++ ;
 			eventsForMinim.push_back( event ) ;
 		}
 	}
@@ -53,12 +53,11 @@ double EnergyMinimisation::functionToMinimize(const double* param)
 {
 	double chi2 = 0 ;
 
-	for( std::vector<Event>::const_iterator it = eventsForMinim.begin() ; it != eventsForMinim.end() ; ++it )
+	for( const auto& event : eventsForMinim )
 	{
-		const Event& event = *it ;
-		double estimEnergy = estimFunc(param , event) ;
-		double target = targetEnergy(event.energy) ;
-		chi2 += (1.0/nEventsPerEnergyMap[event.energy])*( target - estimEnergy )*( target - estimEnergy )/target ;
+		double estimEnergy = estimFunc(param , *event) ;
+		double target = targetEnergy(event->energy) ;
+		chi2 += (1.0/nEventsPerEnergyMap[event->energy])*( target - estimEnergy )*( target - estimEnergy )/target ;
 		//		chi2 += ( target - estimEnergy )*( target - estimEnergy )/target ;
 		//		chi2 += std::abs( target - estimEnergy )/target ;
 	}
@@ -102,18 +101,16 @@ void EnergyMinimisation::createHistos()
 {
 	histoMap.clear() ;
 
-	for (std::vector<Event>::const_iterator it = events.begin() ; it != events.end() ; ++it)
+	for ( const auto& event : events )
 	{
-		Event event = *it ;
-
-		if ( !histoMap.count(event.energy) )
+		if ( !histoMap.count(event->energy) )
 		{
 			std::stringstream toto ;
-			toto << event.energy << "GeV" ;
-			histoMap[event.energy] = std::shared_ptr<TH1>( new TH1D( toto.str().c_str() , toto.str().c_str() , 100 , 0 , 2*event.energy) ) ;
-			histoMap[event.energy]->SetDirectory(0) ;
+			toto << event->energy << "GeV" ;
+			histoMap[event->energy] = std::shared_ptr<TH1>( new TH1D( toto.str().c_str() , toto.str().c_str() , 100 , 0 , 2*event->energy) ) ;
+			histoMap[event->energy]->SetDirectory(0) ;
 		}
-		histoMap[event.energy]->Fill( estimFunc(&bestParam[0] , event) ) ;
+		histoMap[event->energy]->Fill( estimFunc(&bestParam[0] , *event) ) ;
 	}
 }
 
