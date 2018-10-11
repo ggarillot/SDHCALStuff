@@ -5,14 +5,21 @@
 
 #include "TimeCorrection.h"
 
-EventList::~EventList()
+EventList::EventList( const EventList& other )
+	: eventType( other.eventType ),
+	  geomCut( other.geomCut ),
+	  beginTimeCut( other.beginTimeCut ),
+	  endTimeCut( other.endTimeCut )
 {
-	std::cout << "~EventList()" << std::endl ;
+	auto nbEvents = other._events.size() ;
+	_events.resize( nbEvents ) ;
+	for ( decltype(nbEvents) i = 0 ; i < nbEvents ; ++i )
+		_events[i] = std::make_shared<Event>( *other._events[i] ) ;
+}
 
-	for ( auto& i : _events )
-	{
-		i.reset() ;
-	}
+void EventList::reset()
+{
+	_events.clear() ;
 }
 
 void EventList::loadFile(std::string fileName)
@@ -82,21 +89,22 @@ void EventList::loadFile(std::string fileName , unsigned long long beginTime, un
 bool EventList::cut(const Event& event) const
 {
 	bool beamCut = false ;
-
-	if (geomCut.at(2) < std::numeric_limits<double>::epsilon())
+	if ( geomCut.at(2) < std::numeric_limits<double>::epsilon() )
 		beamCut = true ;
 	else
 		beamCut = ( event.cog[0]-geomCut.at(0) )*( event.cog[0]-geomCut.at(0) ) + ( event.cog[2]-geomCut.at(1) )*( event.cog[2]-geomCut.at(1) ) < geomCut.at(2)*geomCut.at(2) ;
 
 	bool timeCut = ( event.spillEventTime >= beginTimeCut && event.spillEventTime <= endTimeCut ) ;
 
-	bool cut = ( event.transverseRatio > 0.05f && event.neutral == 0 && double(event.nHit)/event.nLayer > 2.2 && double(event.nInteractingLayer)/event.nLayer > 0.2 ) ;
+	bool cut = true ;
+	if ( eventType != kNothing )
+		cut = ( event.transverseRatio > 0.05f && event.neutral == 0 && double(event.nHit)/event.nLayer > 2.2 && double(event.nInteractingLayer)/event.nLayer > 0.2 ) ;
 
-//	bool hadronCut = (event.begin > 5 || event.nLayer > 30 ) && event.nTrack > 0 ;
-	bool hadronCut = true ;
-	//	bool cut = ( event.begin < 4 && event.nLayer < 30 && event.transverseRatio > 0.05f && event.neutral == 0 && event.nTrack == 0 && double(event.nHit)/event.nLayer > 2.2 && double(event.nInteractingLayer)/event.nLayer > 0.2 ) ;
-//	bool elecCut = ( event.begin < 5 && event.nLayer < 30 ) ;
-	bool elecCut = true ;
+	bool typeCut = true ;
+	if ( eventType == kHadron )
+		typeCut = event.nTrack > 0 ;
+	if ( eventType == kElectron )
+		typeCut = ( event.begin < 4 && event.nLayer < 30 && event.nTrack == 0 ) ;
 
-	return ( cut && beamCut && elecCut && hadronCut && timeCut ) ;
+	return ( cut && beamCut && typeCut && timeCut ) ;
 }

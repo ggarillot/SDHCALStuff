@@ -63,7 +63,9 @@ struct NormalOrShift
 		Color_t filCol = kRed-10 ;
 		Style_t fillStyle = 0 ;
 
-		bool (*cut)(const Event& event) = &cutNormal ;
+		std::array<double,3> geomCut = {{535,555,100}} ;
+
+		//bool (*cut)(const Event& event) = &cutNormal ;
 } ;
 
 int main()
@@ -109,21 +111,21 @@ int main()
 
 	NormalOrShift center ;
 	center.name = "Center" ;
-	center.cut = &cutNormal ;
+	center.geomCut = {{535,555,100}} ;
 	center.col = kRed ;
 	center.filCol = kRed-10 ;
 	center.fillStyle = 1001 ;
 
 	NormalOrShift shift ;
 	shift.name = "x : -25 , y : -20" ;
-	shift.cut = &cutShift ;
+	shift.geomCut = {{270,350,100}} ;
 	shift.col = kBlue+2 ;
 	shift.filCol = kBlue-10 ;
 	shift.fillStyle = 3001 ;
 
 	NormalOrShift shift2 ;
 	shift2.name = "x : +25 , y : +15" ;
-	shift2.cut = &cutShift2 ;
+	shift2.geomCut = {{780,705,100}} ;
 	shift2.col = kGreen+2 ;
 	shift2.filCol = kGreen-4 ;
 	shift2.fillStyle = 3003 ;
@@ -167,8 +169,8 @@ int main()
 			leg->SetBorderSize(0) ;
 			leg->SetTextColor(kGray+3) ;
 
-			std::array<double,2> xLimits = {0,0} ;
-			std::array<double,2> yLimits = {0,0} ;
+			std::array<double,2> xLimits = {{0,0}} ;
+			std::array<double,2> yLimits = {{0,0}} ;
 
 			for ( auto pos = posVec.begin() ; pos < posVec.end() ; ++pos )
 			{
@@ -186,47 +188,41 @@ int main()
 					histoBeamVec.push_back( histo ) ;
 				}
 
+				EventList eventList ;
+				eventList.setType(EventList::kHadron) ;
+				eventList.setGeomCut( pos->geomCut ) ;
+
 				std::stringstream toto ; toto << dataDir << pos->runMap.at(i) << ".root" ;
 
-				std::cout << "Open " << toto.str().c_str() << std::endl ;
-				TFile* file = new TFile( toto.str().c_str() , "READ") ;
-				TTree* tree = dynamic_cast<TTree*>( file->Get("tree") ) ;
+				eventList.loadFile( toto.str() ) ;
 
-				eventReader.setTree(tree) ;
 
-				std::vector<Event> temp ;
-
-				for ( int iEntry = 0 ; iEntry < tree->GetEntries() ; ++iEntry )
+				if ( i == 80 && dir == nonHomDir )
 				{
-					Event event = eventReader.getEvent(iEntry) ;
+					TH2D* histo = histoBeamVec.back() ;
 
-					if ( i == 80 && dir == nonHomDir )
+					EventList eventList2 ;
+					eventList2.setType(EventList::kNothing) ;
+					eventList2.loadFile( toto.str() ) ;
+
+					for ( const auto& event : eventList2.events() )
 					{
-						TH2D* histo = histoBeamVec.back() ;
-
-						if ( event.cog[0] > 0 && event.cog[0] < 1000 && event.cog[2] > 0 && event.cog[2] < 1000 )
-							histo->Fill(event.cog[2] , event.cog[0]) ;
+						if ( event->cog[0] > 0 && event->cog[0] < 1000 && event->cog[2] > 0 && event->cog[2] < 1000 )
+							histo->Fill(event->cog[2] , event->cog[0]) ;
 					}
-
-					if (!pos->cut(event) )
-						continue ;
-
-					event.energy = i ;
-					temp.push_back(event) ;
 				}
 
-				file->Close() ;
 
 				TimeCorrection timeCorr ;
 				timeCorr.setBeginTime(5e6) ;
 
-				timeCorr.correct(temp) ;
+				timeCorr.correctHits(eventList) ;
 
 				HistoCreator histCreator ;
 				histCreator.setDataStyle(false) ;
 				histCreator.setColor(pos->col) ;
 				histCreator.setFillColor(pos->filCol) ;
-				histCreator.setEventList(temp) ;
+				histCreator.setEventList( eventList.events() ) ;
 
 				std::stringstream titi ; titi << pos->name << i << "GeV" ;
 
@@ -305,16 +301,16 @@ int main()
 	cBeam->SetTicks() ;
 	cBeam->cd() ;
 
-//	TH2D* histo = new TH2D( "beamRange" , ";y (mm);x (mm)" , 1 , 0 , 1000 , 1 , 0 , 1000 ) ;
-//	histo->Draw() ;
+	//	TH2D* histo = new TH2D( "beamRange" , ";y (mm);x (mm)" , 1 , 0 , 1000 , 1 , 0 , 1000 ) ;
+	//	histo->Draw() ;
 
 	histoBeamVec.at(0)->DrawNormalized("box") ;
 	histoBeamVec.at(1)->DrawNormalized("box same") ;
 	histoBeamVec.at(2)->DrawNormalized("box same") ;
-//	for ( const auto& h : histoBeamVec )
-//	{
-//		h->DrawNormalized("lego same") ;
-//	}
+	//	for ( const auto& h : histoBeamVec )
+	//	{
+	//		h->DrawNormalized("lego same") ;
+	//	}
 
 	cBeam->Write() ;
 

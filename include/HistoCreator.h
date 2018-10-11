@@ -2,10 +2,12 @@
 #define HistoCreator_h
 
 #include <string>
+#include <memory>
 
 #include <TProfile.h>
 #include <TColor.h>
 #include <Rtypes.h>
+#include <TGraph.h>
 
 #include "Event.h"
 
@@ -30,7 +32,7 @@ class HistoCreator
 		TH1D* getLongiProfile(std::string histName) const ;
 		TH1D* getRadiProfile(std::string histName) const ;
 
-		inline void setEventList(const std::vector<Event>& eList) { eventList = eList ; }
+		inline void setEventList(const std::vector<std::shared_ptr<Event>>& eList) { eventList = eList ; }
 
 		inline void setColor(Color_t col) { color = gROOT->GetColor(col) ; }
 		inline void setFillColor(Color_t col) { fillColor = gROOT->GetColor(col) ; }
@@ -43,8 +45,8 @@ class HistoCreator
 
 
 	protected :
+		std::vector<std::shared_ptr<Event>> eventList = {} ;
 
-		std::vector<Event> eventList {} ;
 		TColor* color = gROOT->GetColor(kBlack) ;
 		TColor* fillColor = gROOT->GetColor(kBlack) ;
 		bool dataStyle = false ;

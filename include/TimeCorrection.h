@@ -5,8 +5,9 @@
 #include <TProfile.h>
 
 #include <memory>
+#include <string>
 
-#include "Event.h"
+#include "EventList.h"
 #include "HistoCreator.h"
 
 class TimeCorrection
@@ -18,14 +19,15 @@ class TimeCorrection
 		inline void setBeginTime(unsigned long long time) { beginTime = time ; }
 		inline void setEndTime(unsigned long long time) { endTime = time ; }
 
-		void correct(std::vector<Event>& eventList, int polOrder = 2) ;
+		void correctHits(EventList& eventList, int polOrder = 2) ;
+		void correctProfiles(EventList& eventList, int polOrder = 2) ;
 
-		void correctProfiles(std::vector<Event>& eventList) ;
-
-		void correctThrDensity(std::vector<Event>& eventList, int polOrder = 2) ;
-		void correctThrDensity(std::vector<std::shared_ptr<Event>>& eventList, int polOrder = 2) ;
+		void correctThrDensity(std::vector<std::shared_ptr<Event>>& events, int polOrder = 2) ;
+		void correctThrDensity(EventList& eventList, int polOrder = 2) ;
 
 	protected :
+		std::string getFuncStr(int polOrder) const ;
+
 		unsigned long long beginTime = 0 ;
 		unsigned long long endTime = 50e6 ;
 };

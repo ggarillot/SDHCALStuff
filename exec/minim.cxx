@@ -31,7 +31,7 @@ int main(int argc , char** argv)
 	std::vector<EnergyMinimisation*> minimizersVec {} ;
 	std::vector<bool> cheatVec {} ;
 	std::vector<bool> minimizeVec {} ;
-	std::vector<Color_t> colorVec {kRed-4 , kBlue-6 , kGreen+3 , kCyan+2} ;
+	std::vector<Color_t> colorVec {kRed-4 , kBlue-6 , kGreen+3 , kCyan+2 , kMagenta+2 , kYellow+3} ;
 
 	std::string jsonFileName = argv[1] ;
 
@@ -47,6 +47,14 @@ int main(int argc , char** argv)
 	for ( const auto& i : eventListList )
 	{
 		auto eventList = EventList() ;
+		eventList.setType(EventList::kHadron) ;
+
+		if ( i.count("particleType") )
+		{
+			if ( i.at("particleType") == std::string("electron") )
+				eventList.setType(EventList::kElectron) ;
+		}
+
 		if ( i.count("geomCut") )
 		{
 			auto geomCut = i.at("geomCut") ;
@@ -96,7 +104,8 @@ int main(int argc , char** argv)
 			minimizer = new QuadMinimisation(name) ;
 		else if ( method == "LinearDensity" )
 			minimizer = new LinearDensityMinimisation(name) ;
-
+		else if ( method == "Test" )
+			minimizer = new TestMinimisation(name) ;
 
 		auto events = i.at("eventLists") ;
 		std::vector<EventList> vec = {} ;

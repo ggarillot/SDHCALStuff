@@ -37,14 +37,14 @@ Event EventReader::getEvent(Long64_t entry, bool computeDensity)
 	for ( int i = 0 ; i < 4 ; ++i )
 		event.cog[i] = cog[i] ;
 
-//	event.longiProfile = std::vector<double>(*longiProfile) ;
-//	event.radiProfile = std::vector<double>(*radiProfile) ;
+	event.longiProfile = std::vector<double>(*longiProfile) ;
+	event.radiProfile = std::vector<double>(*radiProfile) ;
 
 	event.spillEventTime = spillEventTime ;
 
 	event.emFraction = emFraction ;
 
-	if ( computeDensity )
+	if ( computeDensity && densityPerHit )
 	{
 		for ( unsigned int i = 0 ; i < (*thr).size() ; ++i )
 		{
@@ -59,6 +59,22 @@ Event EventReader::getEvent(Long64_t entry, bool computeDensity)
 	}
 
 	return event ;
+}
+
+void EventReader::loadEvent(Event event)
+{
+	energy = event.energy ;
+	nHit = event.nHit ;
+	nHit1 = event.nHit1 ;
+	nHit2 = event.nHit2 ;
+	nHit3 = event.nHit3 ;
+
+	nHough = event.nHough ;
+	nHough1 = event.nHough1 ;
+	nHough2 = event.nHough2 ;
+	nHough3 = event.nHough3 ;
+
+	density = event.density ;
 }
 
 void EventReader::setTree(TTree* _tree)

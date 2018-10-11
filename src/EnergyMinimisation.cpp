@@ -142,6 +142,22 @@ double QuadMinimisation::estimFunc(const double* param , Event _event) const
 	return alpha*(_event.hitThrDensity.at(1).at(0)) + beta*(_event.hitThrDensity.at(2).at(0)) + gamma*(_event.hitThrDensity.at(3).at(0)) ;
 }
 
+double TestMinimisation::estimFunc(const double* param , Event _event) const
+{
+	double toReturn = 0 ;
+
+	for ( unsigned int i = 1 ; i < 4 ; ++i )
+		for ( unsigned int j = 1 ; j < 10 ; ++j )
+		{
+			if ( i == 3 && j == 9 )
+				toReturn += _event.hitThrDensity.at(i).at(j) * param[3] ;
+			else
+				toReturn += _event.hitThrDensity.at(i).at(j) * param[i-1] ;
+		}
+
+	return toReturn ;
+}
+
 double LinearDensityMinimisation::estimFunc(const double* param , Event _event) const
 {
 	double toReturn = 0 ;

@@ -60,6 +60,7 @@ class EventReader
 		~EventReader() = default ;
 
 		Event getEvent(Long64_t entry , bool computeDensity = false) ;
+		void loadEvent(Event event) ;
 
 		void setTree(TTree* _tree) ;
 

@@ -5,6 +5,7 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <TH2D.h>
+#include <TGraph.h>
 #include <TGraphErrors.h>
 #include <TApplication.h>
 #include <TCanvas.h>
@@ -16,49 +17,10 @@
 
 #include "TimeCorrection.h"
 #include "Event.h"
-
-
-bool cut(const Event& event)
-{
-//	bool keepElectronCut = event.begin < 5*26.131 && event.nLayer < 30 && event.nTrack == 0 ;
-	bool keepHadronCut = event.nTrack > 0 ;
-	bool cut = event.neutral == 0 && event.transverseRatio > 0.05 ;
-
-	//	bool geomCut = std::sqrt( (event.cog[0]-400)*(event.cog[0]-400) + (event.cog[2]-510)*(event.cog[2]-510) ) < 100 ;
-	//	bool geomCut = std::sqrt( (event.cog[0]-570)*(event.cog[0]-570) + (event.cog[2]-505)*(event.cog[2]-505) ) < 50 ;
-	bool geomCut = std::sqrt( (event.cog[0]-490)*(event.cog[0]-490) + (event.cog[2]-460)*(event.cog[2]-460) ) < 100 ;
-
-	bool muonCut = ( 1.0*event.nInteractingLayer/event.nLayer > 0.2 ) && ( 1.0*event.nHit/event.nLayer > 3 ) ;
-	bool timeCut = event.spillEventTime < 30e6 ;
-	//	bool timeCut = event.spillEventTime*200e-9 < 1.2 ;
-
-	//	return ( cut && geomCut && muonCut && timeCut && keepElectronCut ) ;
-	return ( cut && geomCut && muonCut && timeCut && keepHadronCut ) ;
-}
-
-bool cutSim(const Event& event)
-{
-//	bool keepElectronCut = event.begin < 5*26.131 && event.nLayer < 30 && event.nTrack == 0 ;
-	bool keepHadronCut = event.nTrack > 0 ;
-	bool cut = event.neutral == 0 && event.transverseRatio > 0.05 ;
-
-	//	bool geomCut = std::sqrt( (event.cog[0]-400)*(event.cog[0]-400) + (event.cog[2]-510)*(event.cog[2]-510) ) < 100 ;
-	//	bool geomCut = std::sqrt( (event.cog[0]-570)*(event.cog[0]-570) + (event.cog[2]-505)*(event.cog[2]-505) ) < 50 ;
-	bool geomCut = std::sqrt( (event.cog[0]-490)*(event.cog[0]-490) + (event.cog[2]-460)*(event.cog[2]-460) ) < 100 ;
-
-	bool muonCut = ( 1.0*event.nInteractingLayer/event.nLayer > 0.2 ) && ( 1.0*event.nHit/event.nLayer > 3 ) ;
-	bool timeCut = event.spillEventTime < 30e6 ;
-	//	bool timeCut = event.spillEventTime*200e-9 < 1.2 ;
-
-	//	return ( cut && geomCut && muonCut && timeCut && keepElectronCut ) ;
-	return ( cut && geomCut && muonCut && timeCut && keepHadronCut ) ;
-}
-
-
+#include "DataMcCanvas.h"
 
 int main()
 {
-
 	std::map<int , int> runMap ;
 	//	runMap.insert( std::make_pair(10 , 728348) ) ;
 	//	runMap.insert( std::make_pair(15 , 728350) ) ;
@@ -105,11 +67,6 @@ int main()
 	histosDir->mkdir("RadiProfile") ;
 
 
-	//	double beginTime = 0 ;
-	unsigned long long beginTime = 5e6 ;
-	TimeCorrection timeCorr ;
-	timeCorr.setBeginTime(beginTime) ;
-
 	std::map<int , TH1D*> nHitHistDataMap ;
 	std::map<int , TH1D*> longiProfHistDataMap ;
 	std::map<int , TH1D*> radiProfHistDataMap ;
@@ -117,66 +74,53 @@ int main()
 
 	std::map<int , double> nHitErrMap ;
 
-	EventReader eventReader ;
-//	Event event ;
-
 	for ( std::map<int , int>::const_iterator it = runMap.begin() ; it != runMap.end() ; ++it )
 	{
+		EventList eventList ;
+		eventList.setType(EventList::kHadron) ;
+		eventList.setGeomCut( {{490,460,100}} ) ;
+
 		std::stringstream data ;
-		//				data << "/home/garillot/files/DATA/RootFile/electrons/" << it->second << ".root" ;
-		//		data << "/home/garillot/files/Analysis/DATA/" << it->second << ".root" ;
-		data << "/home/garillot/files/Analysis/DATA/" << it->second << ".root" ;
-		TFile* dataFile = TFile::Open( data.str().c_str() , "READ") ;
-		if ( !dataFile )
-		{
-			std::cerr << "File " << data.str() << " not present" << std::endl ;
-			continue ;
-		}
-		TTree* dataTree = dynamic_cast<TTree*>( dataFile->Get("tree") ) ;
-		if ( !dataTree )
-		{
-			std::cerr << "Tree not present in " << data.str() << std::endl ;
-			continue ;
-		}
+//		data << "/home/garillot/files/Analysis/DATA/" << it->second << ".root" ;
+		data << "/home/garillot/files/DATA/Analysis/SPS_Oct2015/163/" << it->second << ".root" ;
 
+		unsigned long long beginTime = 5e6 ;
+		unsigned long long endTime = 30e6 ;
 
-		eventReader.setTree(dataTree) ;
-//		event.setBranchAddress(dataTree) ;
-
-		std::vector<Event> temp ;
-
-
-		int iEntry = 0 ;
-		while ( dataTree->GetEntry(iEntry++) )
-		{
-			Event event = eventReader.getEvent(iEntry-1) ;
-
-			if ( !cut(event) )
-				continue ;
-
-			temp.push_back(event) ;
-		}
-
+		eventList.setBeginTimeCut(beginTime) ;
+		eventList.setEndTimeCut(endTime) ;
+		eventList.loadFile( data.str() ) ;
 
 		HistoCreator* histoCreator = new HistoCreator ;
-		histoCreator->setEventList(temp) ;
+		histoCreator->setEventList( eventList.events() ) ;
 		histoCreator->setDataStyle(true) ;
-		TProfile* profBefore = histoCreator->getNHitOverTimeProfile("before" , beginTime*200e-9) ;
 
+		TProfile* profBefore = nullptr ;
+		TProfile* profAfter = nullptr ;
+		profBefore = histoCreator->getNHitOverTimeProfile("before" , beginTime*200e-9) ;
+
+		TimeCorrection timeCorr ;
+		timeCorr.setBeginTime(beginTime) ;
+		timeCorr.setEndTime(endTime) ;
 
 		std::vector<double> nHitCorrList ;
 		for ( int i = 2 ; i < 9 ; ++i )
 		{
-			std::vector<Event> tempCorr = temp ;
-			timeCorr.correct( tempCorr , i ) ;
+			auto eventList2 = eventList ;
+
+			timeCorr.correctHits( eventList2 , i ) ;
 
 			double mean = 0 ;
-			for ( std::vector<Event>::const_iterator eIt = tempCorr.begin() ; eIt < tempCorr.end() ; ++eIt )
-				mean += eIt->nHit ;
-			mean /= tempCorr.size() ;
+			for ( const auto& event : eventList2.events() )
+				mean += event->nHit ;
+
+			mean /= eventList2.events().size() ;
+
+			std::cout << i << " , mean : " << mean << std::endl ;
 
 			nHitCorrList.push_back(mean) ;
 		}
+
 
 		double mean = 0 ;
 		double sumSq = 0 ;
@@ -195,15 +139,13 @@ int main()
 
 		nHitErrMap.insert( std::make_pair(it->first , var) ) ;
 
-
-//		timeCorr.correct(temp , 4) ;
-		timeCorr.correct(temp , 2) ;
+		timeCorr.correctHits(eventList , 2) ;
+//		timeCorr.correctProfiles(eventList , 1) ;
 
 		std::stringstream toto ;
 		toto << "longiProfData" << it->first << "GeV" ;
 		TH1D* longiProfHistData = histoCreator->getLongiProfile( toto.str() ) ;
 		longiProfHistData->SetDirectory(0) ;
-		longiProfHistData->Scale( 1.0/longiProfHistData->Integral() ) ;
 
 		longiProfHistDataMap.insert( std::make_pair(it->first , longiProfHistData) ) ;
 
@@ -211,21 +153,16 @@ int main()
 		toto << "radiProfData" << it->first << "GeV" ;
 		TH1D* radiProfHistData = histoCreator->getRadiProfile( toto.str() ) ;
 		radiProfHistData->SetDirectory(0) ;
-		radiProfHistData->Scale( 1.0/radiProfHistData->Integral() ) ;
 
 		radiProfHistDataMap.insert( std::make_pair(it->first , radiProfHistData) ) ;
 
-
-		histoCreator->setEventList(temp) ;
+		histoCreator->setEventList( eventList.events() ) ;
 
 		radiMeanDataMap.insert( std::make_pair(it->first , histoCreator->getMeanRadius() ) ) ;
-		TProfile* profAfter = histoCreator->getNHitOverTimeProfile("after" , beginTime*200e-9) ;
 
-		//		TProfile* profAfter = histoCreator->getMeanRadiusOverTimeProfile("after" , 5e6*200e-9) ;
+		profAfter = histoCreator->getNHitOverTimeProfile("after" , beginTime*200e-9) ;
 
-
-
-		if (it->first == 50)
+		//if (it->first == 50)
 		{
 			TCanvas* c2 = new TCanvas("c2","c2",900,900) ;
 			c2->cd() ;
@@ -237,7 +174,8 @@ int main()
 			profAfter->Draw() ;
 			profBefore->Draw("same") ;
 
-			c2->SaveAs("test.root") ;
+			std::stringstream o ; o << "test" << it->first << ".root" ;
+			c2->SaveAs(o.str().c_str()) ;
 			c2->Close() ;
 			//	app->Run() ;
 		}
@@ -248,12 +186,8 @@ int main()
 		toto << "nHitData" << it->first << "GeV" ;
 		TH1D* nHitHistData = histoCreator->getNHit( toto.str() ) ;
 		nHitHistData->SetDirectory(0) ;
-		nHitHistData->Scale( 1.0/nHitHistData->Integral() ) ;
 
 		nHitHistDataMap.insert( std::make_pair(it->first , nHitHistData) ) ;
-
-
-		dataFile->Close() ;
 
 		delete histoCreator ;
 	}
@@ -282,6 +216,10 @@ int main()
 
 		for ( std::map<int , int>::const_iterator it = runMap.begin() ; it != runMap.end() ; ++it )
 		{
+			EventList eventList ;
+			eventList.setType(EventList::kHadron) ;
+
+
 			std::cout << "Process " << it->first << " GeV " << *pIt << std::endl ;
 			std::stringstream sim ;
 			//		sim << "/home/garillot/files/local/RootFile/Geant4.10.01/QGSP_BERT_HP/single_e-_" << it->first << "GeV.root" ;
@@ -293,44 +231,14 @@ int main()
 			//			sim << "/home/garillot/files/Analysis/range70/Geant4.9.6/" << *pIt << "/single_e-_" << it->first << "GeV.root" ;
 			//						sim << "/home/garillot/files/Analysis/range70/Geant4.9.6/" << *pIt << "/single_pi-_" << it->first << "GeV.root" ;
 
-//			sim << "/home/garillot/files/Analysis/TBLike/Geant4.9.6/" << *pIt << "/single_pi-_" << it->first << "GeV.root" ;
+			//			sim << "/home/garillot/files/Analysis/TBLike/Geant4.9.6/" << *pIt << "/single_pi-_" << it->first << "GeV.root" ;
 			sim << "/home/garillot/files/Analysis/TBLike/Geant4.9.6/" << *pIt << "/single_pi-_" << it->first << "GeV.root" ;
 
-			TFile* simFile = TFile::Open( sim.str().c_str() , "READ") ;
-			if ( !simFile )
-			{
-				std::cerr << "File " << sim.str() << " not present" << std::endl ;
-				continue ;
-			}
-			TTree* simTree = dynamic_cast<TTree*>( simFile->Get("tree") ) ;
-			if ( !simTree )
-			{
-				std::cerr << "Tree not present in " << sim.str() << std::endl ;
-				continue ;
-			}
+			eventList.loadFile( sim.str() ) ;
 
-			//			Event2 event ;
-			eventReader.setTree(simTree) ;
-//			event.setBranchAddress(simTree) ;
-
-			std::vector<Event> temp ;
-
-//			event.setBranchAddress(simTree) ;
-
-			temp.clear() ;
-
-			int iEntry = 0 ;
-			while ( simTree->GetEntry(iEntry++) )
-			{
-				Event event = eventReader.getEvent(iEntry-1) ;
-				if ( !cut(event) )
-					continue ;
-
-				temp.push_back(event) ;
-			}
 
 			HistoCreator* histoCreator = new HistoCreator ;
-			histoCreator->setEventList(temp) ;
+			histoCreator->setEventList( eventList.events() ) ;
 			histoCreator->setDataStyle(false) ;
 
 			Color_t color ;
@@ -384,7 +292,6 @@ int main()
 			toto << "longiProfSim" << it->first << "GeV" ;
 			TH1D* longiProfHistSim = histoCreator->getLongiProfile( toto.str() ) ;
 			longiProfHistSim->SetDirectory(0) ;
-			longiProfHistSim->Scale( 1.0/longiProfHistSim->Integral() ) ;
 
 			longiProfMap.insert( std::make_pair(it->first , longiProfHistSim) ) ;
 
@@ -392,23 +299,19 @@ int main()
 			toto << "radiProfSim" << it->first << "GeV" ;
 			TH1D* radiProfHistSim = histoCreator->getRadiProfile( toto.str() ) ;
 			radiProfHistSim->SetDirectory(0) ;
-			radiProfHistSim->Scale( 1.0/radiProfHistSim->Integral() ) ;
 
 			radiProfMap.insert( std::make_pair(it->first , radiProfHistSim) ) ;
 
 			radiMeanMap.insert( std::make_pair(it->first , histoCreator->getMeanRadius()) ) ;
 
 
-
 			toto.str("") ;
 			toto << "nHitSim" << it->first << "GeV" ;
 			TH1D* nHitHistSim = histoCreator->getNHit( toto.str() ) ;
 			nHitHistSim->SetDirectory(0) ;
-			nHitHistSim->Scale( 1.0/nHitHistSim->Integral() ) ;
 
 			nHitMap.insert( std::make_pair(it->first , nHitHistSim) ) ;
 
-			simFile->Close() ;
 			delete histoCreator ;
 		}
 
@@ -431,29 +334,43 @@ int main()
 			std::cout << "Process nHit " << it->first << " GeV " << physicsListVec.at(i) << std::endl ;
 			std::stringstream toto ;
 			toto << it->first << "GeV" ;
-			TCanvas* c1 = new TCanvas( toto.str().c_str() , toto.str().c_str() , 900 , 900 ) ;
-			c1->cd() ;
-			c1->SetTicks() ;
-			gStyle->SetOptStat(0) ;
 
-			THStack* stack = new THStack(toto.str().c_str() , ";Nhit;") ;
-			stack->Add(it->second) ;
-			stack->Add( nHitHistDataMap[it->first] , "p E X0") ;
-			stack->Draw("nostack") ;
+			auto histoSim = it->second ;
+			auto histoData = nHitHistDataMap[it->first] ;
+
+			DataMcCanvas* c = new DataMcCanvas( toto.str().c_str() ) ;
+
+			c->topPad()->cd() ;
+
+			double maxSim = histoSim->GetBinContent( histoSim->GetMaximumBin() ) ;
+			double maxData = histoData->GetBinContent( histoData->GetMaximumBin() ) ;
+
+			if ( maxSim > maxData )
+			{
+				histoSim->SetTitle(";nHit;") ;
+				histoSim->Draw() ;
+				histoData->Draw("p0 same") ;
+			}
+			else
+			{
+				histoData->SetTitle(";nHit;") ;
+				histoData->Draw("p0") ;
+				histoSim->Draw("same") ;
+				histoData->Draw("p0 same") ;
+			}
 
 			TLegend* leg = new TLegend(0.15,0.75,0.35,0.85) ;
 			leg->SetBorderSize(0) ;
-			leg->AddEntry(nHitHistDataMap[it->first] , "SPS H2" , "ep" ) ;
-			leg->AddEntry(it->second , physicsListVec.at(i).c_str() , "f" ) ;
+			leg->AddEntry(histoData , "SPS H2" , "ep" ) ;
+			leg->AddEntry(histoSim , physicsListVec.at(i).c_str() , "f" ) ;
 			leg->Draw() ;
 
-			c1->Write() ;
-			c1->Close() ;
+			c->topPad()->RedrawAxis() ;
+
+			c->Write() ;
+			c->Close() ;
 		}
 
-
-		//		physDir->Close() ;
-		//		dir->Close() ;
 
 		TDirectory* dir2 = histosDir->GetDirectory("LongiProfile") ;
 		dir2->cd() ;
@@ -470,10 +387,22 @@ int main()
 			c1->SetTicks() ;
 			gStyle->SetOptStat(0) ;
 
-			THStack* stack = new THStack(toto.str().c_str() , ";Layer;") ;
-			stack->Add(it->second) ;
-			stack->Add( longiProfHistDataMap[it->first] , "p E X0") ;
-			stack->Draw("nostack") ;
+			double maxSim = it->second->GetBinContent( it->second->GetMaximumBin() ) ;
+			double maxData = longiProfHistDataMap[it->first]->GetBinContent( longiProfHistDataMap[it->first]->GetMaximumBin() ) ;
+
+			if ( maxSim > maxData )
+			{
+				it->second->Draw() ;
+				longiProfHistDataMap[it->first]->Draw("p same") ;
+			}
+			else
+			{
+				longiProfHistDataMap[it->first]->Draw("p") ;
+				it->second->Draw("same") ;
+				longiProfHistDataMap[it->first]->Draw("p same") ;
+			}
+
+			c1->RedrawAxis() ;
 
 			TLegend* leg = new TLegend(0.65,0.75,0.85,0.85) ;
 			leg->SetBorderSize(0) ;
@@ -486,15 +415,12 @@ int main()
 		}
 
 
-		//		physDir->Close() ;
-		//		dir->Close() ;
-
 		TDirectory* dir3 = histosDir->GetDirectory("RadiProfile") ;
 		dir3->cd() ;
 		TDirectory* physDir3 = dir3->mkdir( physicsListVec.at(i).c_str() ) ;
 		physDir3->cd() ;
 
-		for ( std::map<int , TH1D*>::const_iterator it = radiProfHistSimMap.at(i).begin() ; it != radiProfHistSimMap.at(i).end() ; ++it )
+		for ( auto it = radiProfHistSimMap.at(i).cbegin() ; it != radiProfHistSimMap.at(i).cend() ; ++it )
 		{
 			std::cout << "Process RadiProfile " << it->first << " GeV " << physicsListVec.at(i) << std::endl ;
 			std::stringstream toto ;
@@ -504,25 +430,34 @@ int main()
 			c1->SetTicks() ;
 			gStyle->SetOptStat(0) ;
 
-			THStack* stack = new THStack(toto.str().c_str() , ";R (cm);") ;
-			stack->Add(it->second) ;
-			stack->Add( radiProfHistDataMap[it->first] , "p E X0") ;
-			stack->Draw("nostack") ;
+			double maxSim = it->second->GetBinContent( it->second->GetMaximumBin() ) ;
+			double maxData = radiProfHistDataMap[it->first]->GetBinContent( radiProfHistDataMap[it->first]->GetMaximumBin() ) ;
+
+			if ( maxSim > maxData )
+			{
+				it->second->Draw() ;
+				radiProfHistDataMap[it->first]->Draw("p same") ;
+			}
+			else
+			{
+				radiProfHistDataMap[it->first]->Draw("p") ;
+				it->second->Draw("same") ;
+				radiProfHistDataMap[it->first]->Draw("p same") ;
+			}
+
+			c1->RedrawAxis() ;
 
 			TLegend* leg = new TLegend(0.65,0.75,0.85,0.85) ;
 			leg->SetBorderSize(0) ;
-			leg->AddEntry(radiProfHistDataMap[it->first] , "SPS H2" , "ep" ) ;
-			leg->AddEntry(it->second , physicsListVec.at(i).c_str() , "f" ) ;
+			leg->AddEntry(radiProfHistDataMap[it->first] , "SPS H2" , "p" ) ;
+			leg->AddEntry(it->second , physicsListVec.at(i).c_str() , "p" ) ;
 			leg->Draw() ;
 
 			c1->Write() ;
 			c1->Close() ;
 		}
 
-		//		physDir->Close() ;
-		//		dir->Close() ;
 	}
-
 
 
 	graphsDir->cd() ;
@@ -599,11 +534,11 @@ int main()
 		graph->SetPoint( graph->GetN() , it->first , it->second->GetMean() ) ;
 	}
 
-	for ( std::map<int , TH1D*>::const_iterator it = radiProfHistDataMap.begin() ; it != radiProfHistDataMap.end() ; ++it )
+	for ( const auto& it : radiMeanDataMap )
 	{
 		TGraphErrors* graph = radiProfGraphVec.at(0) ;
 		graph->SetMarkerStyle(20) ;
-		graph->SetPoint( graph->GetN() , it->first , it->second->GetMean() ) ;
+		graph->SetPoint( graph->GetN() , it.first , it.second ) ;
 	}
 
 
@@ -637,7 +572,7 @@ int main()
 			double a = nHitHistDataMap[it->first]->GetMean() ;
 			double aErr = nHitErrMap[it->first] ;
 
-			double dev = (b-a)/a ;
+			double dev = b/a ;
 			double devError = std::sqrt( b*b*aErr*aErr/(a*a) ) / a ;
 
 			nHitGraphDevVec.at(i)->SetPoint( nHitGraphDevVec.at(i)->GetN() , it->first , dev ) ;
@@ -652,59 +587,30 @@ int main()
 			graph->SetMarkerColor(color) ;
 			graph->SetPoint( graph->GetN() , it->first , it->second->GetMean() ) ;
 
-			longiProfGraphDevVec.at(i)->SetPoint( longiProfGraphDevVec.at(i)->GetN() , it->first , (it->second->GetMean() - longiProfHistDataMap[it->first]->GetMean())/longiProfHistDataMap[it->first]->GetMean() ) ;
+			longiProfGraphDevVec.at(i)->SetPoint( longiProfGraphDevVec.at(i)->GetN() , it->first , (it->second->GetMean())/longiProfHistDataMap[it->first]->GetMean() ) ;
 			longiProfGraphDevVec.at(i)->SetMarkerColor(color) ;
 		}
 
-		for ( std::map<int , TH1D*>::const_iterator it = radiProfHistSimMap.at(i).begin() ; it != radiProfHistSimMap.at(i).end() ; ++it )
+		for ( const auto& it : radiMeanSimMap.at(i) )
 		{
 			TGraphErrors* graph = radiProfGraphVec.at(i+1) ;
 			graph->SetMarkerColor(color) ;
-			graph->SetPoint( graph->GetN() , it->first , it->second->GetMean() ) ;
 
-			radiProfGraphDevVec.at(i)->SetPoint( radiProfGraphDevVec.at(i)->GetN() , it->first , (it->second->GetMean() - radiProfHistDataMap[it->first]->GetMean())/radiProfHistDataMap[it->first]->GetMean() ) ;
+			int point = graph->GetN() ;
+			graph->SetPoint( point , it.first , it.second ) ;
+
+			radiProfGraphDevVec.at(i)->SetPoint( point , it.first , it.second/radiMeanDataMap[it.first] ) ;
 			radiProfGraphDevVec.at(i)->SetMarkerColor(color) ;
 		}
 
-		//		for ( std::map<int , double>::const_iterator it = radiMeanSimMap.at(i).begin() ; it != radiMeanSimMap.at(i).end() ; ++it )
-		//		{
-		//			TGraphErrors* graph = radiProfGraphVec.at(i+1) ;
-		//			graph->SetMarkerColor(color) ;
-		//			graph->SetPoint( graph->GetN() , it->first , it->second ) ;
-
-		////			radiProfGraphDevVec.at(i)->SetPoint( radiProfGraphDevVec.at(i)->GetN() , it->first , (it->second->GetMean() - radiProfHistDataMap[it->first]->GetMean())/radiProfHistDataMap[it->first]->GetMean() ) ;
-		////			radiProfGraphDevVec.at(i)->SetMarkerColor(color) ;
-		//		}
-
 	}
 
-	int energyMax = (--runMap.end())->first + 5 ;
+	int energyMax = runMap.rbegin()->first + 5 ;
 
-	TCanvas* nHitC = new TCanvas("nHitCanv" , "nHitCanv"  , 700 , 900) ;
-	nHitC->cd() ;
-	TPad* nHitC1 = new TPad("nHitC1","nHitC1" , 0 , 0.3 , 1.0 , 1.0) ;
-	TPad* nHitC2 = new TPad("nHitC2","nHitC2" , 0 , 0 , 1.0 , 0.3) ;
-	nHitC1->SetTicks() ;
-	nHitC2->SetTicks() ;
-	nHitC1->Draw() ;
-	nHitC2->Draw() ;
-	nHitC1->SetTopMargin(0.05f) ;
-	nHitC1->SetBottomMargin(0.02f) ;
-	nHitC2->SetTopMargin(0) ;
-	nHitC2->SetBottomMargin(0.15f) ;
-	nHitC1->SetLeftMargin(0.15f) ;
-	nHitC2->SetLeftMargin(0.15f) ;
-	nHitC1->SetRightMargin(0.02f) ;
-	nHitC2->SetRightMargin(0.02f) ;
 
-	nHitC1->cd() ;
-//	TH2D* nHitRange = new TH2D("nHit" , ";Energy (GeV);<nHit>" , 1 , 0 , energyMax , 1 , 0 , 600) ;
-	TH2D* nHitRange = new TH2D("nHit" , ";Energy (GeV);<nHit>" , 1 , 0 , energyMax , 1 , 0 , 1400) ;
-	nHitRange->GetXaxis()->SetLabelSize(0) ;
+	DataMcCanvas* nHitC = new DataMcCanvas("nHitCanv" , {0,energyMax} , {0,1400} , {0.81,1.19} , "Energy (GeV)" , "<nHit>") ;
 
-	nHitRange->GetYaxis()->SetTitleOffset(1.8f) ;
-	nHitRange->Draw() ;
-
+	nHitC->topPad()->cd() ;
 	for ( unsigned int i = 0 ; i < nHitGraphVec.size() ; ++i )
 		nHitGraphVec.at(i)->Draw("P same") ;
 
@@ -721,59 +627,23 @@ int main()
 	}
 	nHitleg->Draw() ;
 
-	nHitC2->cd() ;
-	TH2D* nHitDevRange = new TH2D("nHitDev" , ";Energy (GeV);(MC-DATA)/DATA   " , 1 , 0 , energyMax , 1 , -0.19 , 0.19) ;
-	nHitDevRange->GetXaxis()->SetTickLength(0.075f) ;
-	nHitDevRange->GetXaxis()->SetLabelSize(0.075f) ;
-	nHitDevRange->GetXaxis()->SetTitleSize(0.075f) ;
-	nHitDevRange->GetXaxis()->SetTitleOffset(0.9f) ;
-	nHitDevRange->GetYaxis()->SetLabelSize(0.075f) ;
-	nHitDevRange->GetYaxis()->SetNdivisions(5,5,0) ;
-	nHitDevRange->GetYaxis()->SetTitleSize(0.075f) ;
-	nHitDevRange->GetYaxis()->SetTitleOffset(0.8f) ;
-	nHitDevRange->Draw() ;
+	nHitC->bottomPad()->cd() ;
 
-	TLine* nHitDevLine = new TLine(0,0,energyMax,0) ;
-	nHitDevLine->SetLineColor(kBlack) ;
-	nHitDevLine->SetLineWidth(2) ;
-	nHitDevLine->Draw() ;
+
 
 	for ( unsigned int i = 0 ; i < nHitGraphDevVec.size() ; ++i )
 		nHitGraphDevVec.at(i)->Draw("PZ same") ;
-
 
 	nHitC->Write() ;
 	nHitC->Close() ;
 
 
+	DataMcCanvas* longiProfC = new DataMcCanvas("longiProfCanv" , {0,energyMax} , {0,16} , {0.81,1.19} , "Energy (GeV)" , "<Layer>") ;
 
-	TCanvas* longiProfC = new TCanvas("longiProfCanv" , "longiProfCanv"  , 700 , 900) ;
-	longiProfC->cd() ;
-	TPad* longiProfC1 = new TPad("longiProfC1","longiProfC1" , 0 , 0.3 , 1.0 , 1.0) ;
-	TPad* longiProfC2 = new TPad("longiProfC2","longiProfC2" , 0 , 0 , 1.0 , 0.3) ;
-	longiProfC1->SetTicks() ;
-	longiProfC2->SetTicks() ;
-	longiProfC1->Draw() ;
-	longiProfC2->Draw() ;
-	longiProfC1->SetTopMargin(0.05f) ;
-	longiProfC1->SetBottomMargin(0.02f) ;
-	longiProfC2->SetTopMargin(0) ;
-	longiProfC2->SetBottomMargin(0.15f) ;
-	longiProfC1->SetLeftMargin(0.15f) ;
-	longiProfC2->SetLeftMargin(0.15f) ;
-	longiProfC1->SetRightMargin(0.02f) ;
-	longiProfC2->SetRightMargin(0.02f) ;
-
-	longiProfC1->cd() ;
-	TH2D* longiProfRange = new TH2D("Longitudinal Profile" , ";Energy (GeV);<Layer>" , 1 , 0 , energyMax , 1 , 0 , 16) ;
-	longiProfRange->GetXaxis()->SetLabelSize(0) ;
-
-	longiProfRange->GetYaxis()->SetTitleOffset(1.8f) ;
-	longiProfRange->Draw() ;
+	longiProfC->topPad()->cd() ;
 
 	for ( unsigned int i = 0 ; i < longiProfGraphVec.size() ; ++i )
 		longiProfGraphVec.at(i)->Draw("P same") ;
-
 
 	TLegend* longiProfleg = new TLegend(0.18,0.75,0.6,0.88) ;
 	longiProfleg->SetBorderSize(0) ;
@@ -787,55 +657,18 @@ int main()
 	}
 	longiProfleg->Draw() ;
 
-	longiProfC2->cd() ;
-	TH2D* longiProfDevRange = new TH2D("longiProfDevRange" , ";Energy (GeV);(MC-DATA)/DATA   " , 1 , 0 , energyMax , 1 , -0.19 , 0.19) ;
-	longiProfDevRange->GetXaxis()->SetTickLength(0.075f) ;
-	longiProfDevRange->GetXaxis()->SetLabelSize(0.075f) ;
-	longiProfDevRange->GetXaxis()->SetTitleSize(0.075f) ;
-	longiProfDevRange->GetXaxis()->SetTitleOffset(0.9f) ;
-	longiProfDevRange->GetYaxis()->SetLabelSize(0.075f) ;
-	longiProfDevRange->GetYaxis()->SetNdivisions(5,5,0) ;
-	longiProfDevRange->GetYaxis()->SetTitleSize(0.075f) ;
-	longiProfDevRange->GetYaxis()->SetTitleOffset(0.8f) ;
-	longiProfDevRange->Draw() ;
-
-	TLine* longiProfDevLine = new TLine(0,0,energyMax,0) ;
-	longiProfDevLine->SetLineColor(kBlack) ;
-	longiProfDevLine->SetLineWidth(2) ;
-	longiProfDevLine->Draw() ;
+	longiProfC->bottomPad()->cd() ;
 
 	for ( unsigned int i = 0 ; i < longiProfGraphDevVec.size() ; ++i )
 		longiProfGraphDevVec.at(i)->Draw("P same") ;
-
 
 	longiProfC->Write() ;
 	longiProfC->Close() ;
 
 
+	DataMcCanvas* radiProfC = new DataMcCanvas("radiProfCanv" , {0,energyMax} , {0,8} , {0.81,1.19} , "Energy (GeV)" , "<R> (cm)") ;
 
-	TCanvas* radiProfC = new TCanvas("radiProfCanv" , "radiProfCanv"  , 700 , 900) ;
-	radiProfC->cd() ;
-	TPad* radiProfC1 = new TPad("radiProfC1","radiProfC1" , 0 , 0.3 , 1.0 , 1.0) ;
-	TPad* radiProfC2 = new TPad("radiProfC2","radiProfC2" , 0 , 0 , 1.0 , 0.3) ;
-	radiProfC1->SetTicks() ;
-	radiProfC2->SetTicks() ;
-	radiProfC1->Draw() ;
-	radiProfC2->Draw() ;
-	radiProfC1->SetTopMargin(0.05f) ;
-	radiProfC1->SetBottomMargin(0.02f) ;
-	radiProfC2->SetTopMargin(0) ;
-	radiProfC2->SetBottomMargin(0.15f) ;
-	radiProfC1->SetLeftMargin(0.15f) ;
-	radiProfC2->SetLeftMargin(0.15f) ;
-	radiProfC1->SetRightMargin(0.02f) ;
-	radiProfC2->SetRightMargin(0.02f) ;
-
-	radiProfC1->cd() ;
-	TH2D* radiProfRange = new TH2D("Radial Profile" , ";Energy (GeV);<R> (cm)" , 1 , 0 , energyMax , 1 , 0 , 8) ;
-	radiProfRange->GetXaxis()->SetLabelSize(0) ;
-
-	radiProfRange->GetYaxis()->SetTitleOffset(1.8f) ;
-	radiProfRange->Draw() ;
+	radiProfC->topPad()->cd() ;
 
 	for ( unsigned int i = 0 ; i < radiProfGraphVec.size() ; ++i )
 		radiProfGraphVec.at(i)->Draw("P same") ;
@@ -853,22 +686,7 @@ int main()
 	}
 	radiProfleg->Draw() ;
 
-	radiProfC2->cd() ;
-	TH2D* radiProfDevRange = new TH2D("radiProfDevRange" , ";Energy (GeV);(MC-DATA)/DATA   " , 1 , 0 , energyMax , 1 , -0.19 , 0.19) ;
-	radiProfDevRange->GetXaxis()->SetTickLength(0.075f) ;
-	radiProfDevRange->GetXaxis()->SetLabelSize(0.075f) ;
-	radiProfDevRange->GetXaxis()->SetTitleSize(0.075f) ;
-	radiProfDevRange->GetXaxis()->SetTitleOffset(0.9f) ;
-	radiProfDevRange->GetYaxis()->SetLabelSize(0.075f) ;
-	radiProfDevRange->GetYaxis()->SetNdivisions(5,5,0) ;
-	radiProfDevRange->GetYaxis()->SetTitleSize(0.075f) ;
-	radiProfDevRange->GetYaxis()->SetTitleOffset(0.8f) ;
-	radiProfDevRange->Draw() ;
-
-	TLine* radiProfDevLine = new TLine(0,0,energyMax,0) ;
-	radiProfDevLine->SetLineColor(kBlack) ;
-	radiProfDevLine->SetLineWidth(2) ;
-	radiProfDevLine->Draw() ;
+	radiProfC->bottomPad()->cd() ;
 
 	for ( unsigned int i = 0 ; i < radiProfGraphDevVec.size() ; ++i )
 		radiProfGraphDevVec.at(i)->Draw("P same") ;
@@ -878,9 +696,6 @@ int main()
 	radiProfC->Close() ;
 
 
-
 	return 0 ;
-
-
 }
 

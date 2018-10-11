@@ -1,5 +1,6 @@
 #include "HistoCreator.h"
 
+
 #include <iostream>
 
 HistoCreator::HistoCreator()
@@ -15,12 +16,10 @@ TProfile* HistoCreator::getNHitOverTimeProfile(std::string profName , double tim
 {
 	TProfile* prof = new TProfile(profName.c_str() , "" , 50 , 0 , 7 ) ;
 
-	for ( std::vector<Event>::const_iterator it = eventList.begin() ; it != eventList.end() ; ++it )
+	for ( const auto& event : eventList )
 	{
-		const Event& event = *it ;
-		double time = event.spillEventTime*200e-9 - timeRef ;
-
-		prof->Fill(time , event.nHit) ;
+		double time = event->spillEventTime*200e-9 - timeRef ;
+		prof->Fill(time , event->nHit) ;
 	}
 
 	return prof ;
@@ -30,12 +29,10 @@ TProfile* HistoCreator::getNHit1OverTimeProfile(std::string profName , double ti
 {
 	TProfile* prof = new TProfile(profName.c_str() , "" , 50 , 0 , 7 ) ;
 
-	for ( std::vector<Event>::const_iterator it = eventList.begin() ; it != eventList.end() ; ++it )
+	for ( const auto& event : eventList )
 	{
-		const Event& event = *it ;
-		double time = event.spillEventTime*200e-9 - timeRef ;
-
-		prof->Fill(time , event.nHit1) ;
+		double time = event->spillEventTime*200e-9 - timeRef ;
+		prof->Fill(time , event->nHit1) ;
 	}
 
 	return prof ;
@@ -45,12 +42,10 @@ TProfile* HistoCreator::getNHit2OverTimeProfile(std::string profName , double ti
 {
 	TProfile* prof = new TProfile(profName.c_str() , "" , 50 , 0 , 7 ) ;
 
-	for ( std::vector<Event>::const_iterator it = eventList.begin() ; it != eventList.end() ; ++it )
+	for ( const auto& event : eventList )
 	{
-		const Event& event = *it ;
-		double time = event.spillEventTime*200e-9 - timeRef ;
-
-		prof->Fill(time , event.nHit2) ;
+		double time = event->spillEventTime*200e-9 - timeRef ;
+		prof->Fill(time , event->nHit2) ;
 	}
 
 	return prof ;
@@ -60,12 +55,10 @@ TProfile* HistoCreator::getNHit3OverTimeProfile(std::string profName , double ti
 {
 	TProfile* prof = new TProfile(profName.c_str() , "" , 50 , 0 , 7 ) ;
 
-	for ( std::vector<Event>::const_iterator it = eventList.begin() ; it != eventList.end() ; ++it )
+	for ( const auto& event : eventList )
 	{
-		const Event& event = *it ;
-		double time = event.spillEventTime*200e-9 - timeRef ;
-
-		prof->Fill(time , event.nHit3) ;
+		double time = event->spillEventTime*200e-9 - timeRef ;
+		prof->Fill(time , event->nHit3) ;
 	}
 
 	return prof ;
@@ -75,17 +68,16 @@ TProfile* HistoCreator::getMeanRadiusOverTimeProfile(std::string profName , doub
 {
 	TProfile* prof = new TProfile(profName.c_str() , "" , 50 , 0 , 7 ) ;
 
-	for ( std::vector<Event>::const_iterator it = eventList.begin() ; it != eventList.end() ; ++it )
+	for ( const auto& event : eventList )
 	{
-		const Event& event = *it ;
-		double time = event.spillEventTime*200e-9 - timeRef ;
+		double time = event->spillEventTime*200e-9 - timeRef ;
 
 		double mean = 0 ;
 		double norm = 0 ;
-		for ( unsigned int i = 0 ; i < event.radiProfile.size() && i < 48 ; ++i )
+		for ( unsigned int i = 0 ; i < event->radiProfile.size() && i < 48 ; ++i )
 		{
-			mean += event.radiProfile.at(i) * (i+1) ;
-			norm += event.radiProfile.at(i) ;
+			mean += event->radiProfile.at(i) * (i+1) ;
+			norm += event->radiProfile.at(i) ;
 		}
 
 		mean /= norm ;
@@ -100,20 +92,14 @@ double HistoCreator::getMeanRadius() const
 {
 	double meanRadius = 0 ;
 
-	for ( std::vector<Event>::const_iterator it = eventList.begin() ; it != eventList.end() ; ++it )
+	for ( const auto& event : eventList )
 	{
-		const Event& event = *it ;
-
 		double mean = 0 ;
-		double norm = 0 ;
 
-		for ( unsigned int i = 0 ; i < event.radiProfile.size() && i < 48 ; ++i )
-		{
-			mean += event.radiProfile.at(i) * (i+1) ;
-			norm += event.radiProfile.at(i) ;
-		}
+		for ( unsigned int i = 0 ; i < event->radiProfile.size() && i < 48 ; ++i )
+			mean += event->radiProfile.at(i)*event->nHit * i ;
 
-		mean /= norm ;
+		mean /= event->nHit ;
 		meanRadius += mean ;
 	}
 
@@ -124,7 +110,7 @@ double HistoCreator::getMeanRadius() const
 TH1D* HistoCreator::getNHit(std::string histName , int thr , bool custom) const
 {
 	int nBins = 70 ;
-	int max = static_cast<int>( eventList.at(0).energy*20 + 300 ) ;
+	int max = static_cast<int>( eventList.at(0)->energy*20 + 300 ) ;
 
 	double perBin = 1.0*max/nBins ;
 
@@ -132,6 +118,14 @@ TH1D* HistoCreator::getNHit(std::string histName , int thr , bool custom) const
 
 	TH1D* histo = new TH1D( histName.c_str() , "" , nBins , 0 , max) ;
 
+	histo->GetXaxis()->SetLabelSize(0.025f) ;
+	histo->GetYaxis()->SetLabelSize(0.025f) ;
+
+	histo->GetYaxis()->SetTitleOffset(1.5f) ;
+
+	histo->GetXaxis()->SetTitleFont(62) ;
+	histo->GetYaxis()->SetTitleFont(62) ;
+
 	if ( dataStyle )
 	{
 		histo->Sumw2() ;
@@ -142,18 +136,25 @@ TH1D* HistoCreator::getNHit(std::string histName , int thr , bool custom) const
 	}
 	else
 	{
+		histo->SetLineWidth(2) ;
 		histo->SetLineColor( static_cast<Color_t>(color->GetNumber()) ) ;
 		histo->SetFillColor( static_cast<Color_t>(fillColor->GetNumber()) ) ;
 	}
 
 
-	for ( std::vector<Event>::const_iterator it = eventList.begin() ; it != eventList.end() ; ++it )
+	for ( const auto& event : eventList )
 	{
-		const Event& event = *it ;
-		float nHit = static_cast<float>(event.nHit) ;
+		float nHit = static_cast<float>(event->nHit) ;
 		if (custom)
-			nHit = event.nHitCustom ;
+			nHit = event->nHitCustom ;
 		histo->Fill( nHit ) ;
+	}
+
+	for ( int i = 0 ; i < nBins ; ++i )
+	{
+		histo->SetBinContent( i+1 , histo->GetBinContent(i+1)/eventList.size() ) ;
+		if ( dataStyle )
+			histo->SetBinError( i+1 , histo->GetBinError(i+1)/eventList.size() ) ;
 	}
 
 	return histo ;
@@ -161,7 +162,9 @@ TH1D* HistoCreator::getNHit(std::string histName , int thr , bool custom) const
 
 TH1D* HistoCreator::getLongiProfile(std::string histName) const
 {
-	TH1D* histo = new TH1D( histName.c_str() , "" , 50 , 0 , 50) ;
+	std::array<double,48> values = {} ;
+
+	TH1D* histo = new TH1D( histName.c_str() , "" , 48 , -0.5 , 47.5) ;
 
 	if ( dataStyle )
 	{
@@ -178,27 +181,31 @@ TH1D* HistoCreator::getLongiProfile(std::string histName) const
 	}
 
 
-	for ( std::vector<Event>::const_iterator it = eventList.begin() ; it != eventList.end() ; ++it )
+	for ( const auto& event : eventList )
 	{
-		const Event& event = *it ;
-
-		unsigned int realBegin = static_cast<unsigned int>( event.begin/26.131 + 0.5) - 1 ;
-
-		//		if ( realBegin < 0 )
-		//			continue ;
+		unsigned int realBegin = static_cast<unsigned int>( event->begin/26.131 + 0.5) - 1 ;
 
 		if ( realBegin > 20 )
 			continue ;
 
-		//		std::cout << event.longiProfile->at(0) << std::endl ;
-
-		int showerI = 0 ;
-		for ( unsigned int i = realBegin ; i < event.longiProfile.size() ; i++ )
+		unsigned int showerI = 0 ;
+		for ( unsigned int i = realBegin ; i < event->longiProfile.size() ; i++ )
 		{
-//			histo->Fill( showerI , event.longiProfile->at(i)/event.nHit ) ;
-						histo->Fill( showerI , event.longiProfile.at(i) ) ;
+			values[showerI] += event->longiProfile.at(i) ;
 			showerI++ ;
+
+			if ( showerI > 47 )
+				break ;
 		}
+	}
+
+	for ( auto& i : values )
+		i /= eventList.size() ;
+
+	for ( unsigned int i = 0 ; i < 48 ; ++i )
+	{
+		histo->SetBinContent( i + 1 , values[i] ) ;
+		histo->SetBinError( i + 1 , 0 ) ;
 	}
 
 	return histo ;
@@ -206,7 +213,9 @@ TH1D* HistoCreator::getLongiProfile(std::string histName) const
 
 TH1D* HistoCreator::getRadiProfile(std::string histName) const
 {
-	TH1D* histo = new TH1D( histName.c_str() , "" , 50 , 0 , 50) ;
+	std::array<double,40> values = {} ;
+
+	TH1D* histo = new TH1D( histName.c_str() , "" , 40 , -0.5 , 39.5) ;
 
 	if ( dataStyle )
 	{
@@ -223,25 +232,24 @@ TH1D* HistoCreator::getRadiProfile(std::string histName) const
 	}
 
 
-	for ( std::vector<Event>::const_iterator it = eventList.begin() ; it != eventList.end() ; ++it )
+	for ( const auto& event : eventList )
 	{
-		const Event& event = *it ;
-
-		unsigned int realBegin = static_cast<unsigned int>( event.begin/26.131 + 0.5) - 1 ;
-
-		//		if ( realBegin < 0 )
-		//			continue ;
+		unsigned int realBegin = static_cast<unsigned int>( event->begin/26.131 + 0.5) - 1 ;
 
 		if ( realBegin > 20 )
 			continue ;
 
+		for ( unsigned int i = 0 ; i < event->radiProfile.size() && i < 40 ; i++ )
+			values[i] += event->radiProfile[i] / ( 3.1415926536*( 2*(i+1)-1 ) ) ;
+	}
 
-		for ( unsigned int i = 0 ; i < event.radiProfile.size() && i < 49 ; i++ )
-		{
-//			histo->Fill( i , event.radiProfile->at(i)/event.nHit ) ;
-			histo->Fill( i , event.radiProfile.at(i) ) ;
-		}
+	for ( auto& i : values )
+		i /= eventList.size() ;
 
+	for ( unsigned int i = 0 ; i < 40 ; ++i )
+	{
+		histo->SetBinContent( i+1 , values[i] ) ;
+		histo->SetBinError( i+1 , 0 ) ;
 	}
 
 	return histo ;

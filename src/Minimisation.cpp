@@ -27,11 +27,6 @@ Minimisation::Minimisation(unsigned int nParam_)
 	}
 }
 
-Minimisation::~Minimisation()
-{
-
-}
-
 double Minimisation::eval(const std::vector<double>& param)
 {
 	return functionToMinimize( &param[0] ) ;

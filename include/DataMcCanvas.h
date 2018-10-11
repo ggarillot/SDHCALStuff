@@ -11,6 +11,7 @@ class DataMcCanvas : public TCanvas
 {
 	public :
 		DataMcCanvas(std::string name , std::pair<double, double> xAxis , std::pair<double, double> yAxis , std::pair<double, double> devAxis , std::string xName , std::string yName) ;
+		DataMcCanvas(std::string name , std::string xName = "" , std::string yName = "") ;
 
 		TPad* topPad() { return _topPad ; }
 		TPad* bottomPad() { return _bottomPad ; }

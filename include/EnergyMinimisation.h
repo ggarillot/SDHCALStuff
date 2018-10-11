@@ -81,6 +81,23 @@ class QuadMinimisation : public EnergyMinimisation
 		double estimFunc(const double* param , Event _event) const ;
 } ;
 
+class TestMinimisation : public EnergyMinimisation
+{
+	public :
+		TestMinimisation(std::string name_ = "Test") : EnergyMinimisation(4, name_)
+		{
+			limitsParam = std::vector<Limits>(nParam , kPositive) ;
+
+			for ( unsigned int i = 0 ; i < 4 ; ++i )
+			{
+				std::stringstream toto ; toto << "param" << i ;
+				nameParam[i] = toto.str() ;
+			}
+		}
+
+		double estimFunc(const double* param , Event _event) const ;
+} ;
+
 class LinearDensityMinimisation : public EnergyMinimisation
 {
 	public :

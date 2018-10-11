@@ -57,14 +57,14 @@ int main(int argc , char** argv)
 	int difID ;
 	int nTracks ;
 	std::vector<double>* efficiencies = nullptr ;
-	double multiplicity ;
+	std::vector<double>* multiplicities = nullptr ;
 	std::vector<double>* position = nullptr ;
 
 	tree->SetBranchAddress("PadID" , &padID) ;
 	tree->SetBranchAddress("DifID" , &difID) ;
 	tree->SetBranchAddress("AsicID" , &asicID) ;
 	tree->SetBranchAddress("Efficiencies" , &efficiencies) ;
-	tree->SetBranchAddress("Multiplicity" , &multiplicity) ;
+	tree->SetBranchAddress("Multiplicities" , &multiplicities) ;
 	tree->SetBranchAddress("Position" , &position) ;
 	tree->SetBranchAddress("Ntrack" , &nTracks) ;
 
@@ -91,7 +91,7 @@ int main(int argc , char** argv)
 		double a = asicID ;
 
 		std::get<0>( asicMulMap[ {d,a} ] ) ++ ;
-		std::get<1>( asicMulMap[ {d,a} ] ) += multiplicity ;
+		std::get<1>( asicMulMap[ {d,a} ] ) += multiplicities->at(0) ;
 
 		std::get<0>( asicEff3Map[ {d,a} ] ) ++ ;
 		std::get<1>( asicEff3Map[ {d,a} ] ) += efficiencies->at(2) ;
@@ -130,7 +130,7 @@ int main(int argc , char** argv)
 
 		std::get<0>( globalMulMap[IJ(i,j)] ) ++ ;
 		std::get<0>( globalEff3Map[IJ(i,j)] ) ++ ;
-		std::get<1>( globalMulMap[IJ(i,j)] ) += multiplicity ;
+		std::get<1>( globalMulMap[IJ(i,j)] ) += multiplicities->at(0) ;
 		std::get<1>( globalEff3Map[IJ(i,j)] ) += efficiencies->at(2) ;
 	}
 

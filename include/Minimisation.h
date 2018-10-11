@@ -8,7 +8,7 @@ class Minimisation
 {
 	public :
 		Minimisation(unsigned int nParam_) ;
-		virtual ~Minimisation() ;
+		virtual ~Minimisation() = default ;
 
 		virtual double functionToMinimize(const double* param) = 0 ;
 		double eval(const std::vector<double>& param) ;
