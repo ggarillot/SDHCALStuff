@@ -166,6 +166,14 @@ TH1D* HistoCreator::getLongiProfile(std::string histName) const
 
 	TH1D* histo = new TH1D( histName.c_str() , "" , 48 , -0.5 , 47.5) ;
 
+	histo->GetXaxis()->SetLabelSize(0.025f) ;
+	histo->GetYaxis()->SetLabelSize(0.025f) ;
+
+	histo->GetYaxis()->SetTitleOffset(1.5f) ;
+
+	histo->GetXaxis()->SetTitleFont(62) ;
+	histo->GetYaxis()->SetTitleFont(62) ;
+
 	if ( dataStyle )
 	{
 		histo->Sumw2() ;
@@ -183,7 +191,8 @@ TH1D* HistoCreator::getLongiProfile(std::string histName) const
 
 	for ( const auto& event : eventList )
 	{
-		unsigned int realBegin = static_cast<unsigned int>( event->begin/26.131 + 0.5) - 1 ;
+//		unsigned int realBegin = static_cast<unsigned int>( event->begin/26.131 + 0.5) - 1 ;
+		unsigned int realBegin = static_cast<unsigned int>( event->begin) ;
 
 		if ( realBegin > 20 )
 			continue ;
@@ -215,7 +224,15 @@ TH1D* HistoCreator::getRadiProfile(std::string histName) const
 {
 	std::array<double,40> values = {} ;
 
-	TH1D* histo = new TH1D( histName.c_str() , "" , 40 , -0.5 , 39.5) ;
+	TH1D* histo = new TH1D( histName.c_str() , "" , 36 , -0.5 , 35.5) ;
+
+	histo->GetXaxis()->SetLabelSize(0.025f) ;
+	histo->GetYaxis()->SetLabelSize(0.025f) ;
+
+	histo->GetYaxis()->SetTitleOffset(1.5f) ;
+
+	histo->GetXaxis()->SetTitleFont(62) ;
+	histo->GetYaxis()->SetTitleFont(62) ;
 
 	if ( dataStyle )
 	{
@@ -234,8 +251,8 @@ TH1D* HistoCreator::getRadiProfile(std::string histName) const
 
 	for ( const auto& event : eventList )
 	{
-		unsigned int realBegin = static_cast<unsigned int>( event->begin/26.131 + 0.5) - 1 ;
-
+//		unsigned int realBegin = static_cast<unsigned int>( event->begin/26.131 + 0.5) - 1 ;
+		unsigned int realBegin = static_cast<unsigned int>( event->begin) ;
 		if ( realBegin > 20 )
 			continue ;
 
@@ -246,7 +263,7 @@ TH1D* HistoCreator::getRadiProfile(std::string histName) const
 	for ( auto& i : values )
 		i /= eventList.size() ;
 
-	for ( unsigned int i = 0 ; i < 40 ; ++i )
+	for ( unsigned int i = 0 ; i < 36 ; ++i )
 	{
 		histo->SetBinContent( i+1 , values[i] ) ;
 		histo->SetBinError( i+1 , 0 ) ;

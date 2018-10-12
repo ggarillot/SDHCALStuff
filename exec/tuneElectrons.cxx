@@ -14,13 +14,105 @@
 #include <TLegend.h>
 #include <TLine.h>
 #include <TDirectory.h>
+#include <TLatex.h>
 
 #include "TimeCorrection.h"
 #include "Event.h"
 #include "DataMcCanvas.h"
 
+void addG4Version(TPad* canvas , std::string version)
+{
+	canvas->cd() ;
+	std::stringstream toto ;
+	toto << "Geant4." << version ;
+	TLatex* t = new TLatex(.10 , .96 , toto.str().c_str()) ;
+	t->SetNDC() ;
+	t->SetTextAlign(11) ;
+	t->SetTextSize(0.03f) ;
+	t->Draw() ;
+}
+
+void addEnergyText(TPad* canvas , double energy)
+{
+	canvas->cd() ;
+	std::stringstream toto ;
+	toto << energy << " GeV" ;
+	TLatex* t = new TLatex(.525 , .96 , toto.str().c_str()) ;
+	t->SetNDC() ;
+	t->SetTextAlign(21) ;
+	t->SetTextSize(0.03f) ;
+	t->Draw() ;
+}
+
+void writeHistos(std::map<int , TH1D*> simMap , std::map<int , TH1D*> dataMap , std::string physList , std::string g4Version , std::string histoTitle)
+{
+	for ( std::map<int , TH1D*>::const_iterator it = simMap.begin() ; it != simMap.end() ; ++it )
+	{
+		//		std::cout << "Process nHit " << it->first << " GeV " << physList << std::endl ;
+		std::stringstream toto ;
+		toto << it->first << "GeV" ;
+
+		auto histoSim = it->second ;
+		auto histoData = dataMap[it->first] ;
+
+		DataMcCanvas* c = new DataMcCanvas( toto.str().c_str() ) ;
+
+		c->topPad()->cd() ;
+
+		double maxSim = histoSim->GetBinContent( histoSim->GetMaximumBin() ) ;
+		double maxData = histoData->GetBinContent( histoData->GetMaximumBin() ) ;
+
+		if ( maxSim > maxData )
+		{
+			histoSim->SetTitle( histoTitle.c_str() ) ;
+			histoSim->Draw() ;
+			histoData->Draw("p0 same") ;
+		}
+		else
+		{
+			histoData->SetTitle( histoTitle.c_str() ) ;
+			histoData->Draw("p0") ;
+			histoSim->Draw("same") ;
+			histoData->Draw("p0 same") ;
+		}
+
+		TLegend* leg = new TLegend(0.15,0.75,0.35,0.85) ;
+		leg->SetBorderSize(0) ;
+		leg->AddEntry(histoData , "SPS H2" , "ep" ) ;
+		leg->AddEntry(histoSim , physList.c_str() , "f" ) ;
+		leg->Draw() ;
+
+		c->topPad()->RedrawAxis() ;
+
+		addEnergyText(c->topPad() , it->first) ;
+		addG4Version(c->topPad() , g4Version) ;
+
+		c->Write() ;
+		c->Close() ;
+	}
+}
+
+struct ColorPhysList
+{
+		ColorPhysList(Color_t c , Color_t f)
+			: color(c) , fillColor(f) {}
+		Color_t color = kBlack ;
+		Color_t fillColor = kBlack ;
+} ;
+
 int main()
 {
+	std::map<std::string , ColorPhysList> colorMap = {} ;
+	colorMap.insert( {"FTF_BIC" , {kMagenta+1 , kMagenta-9}} ) ;
+	colorMap.insert( {"FTFP_BERT" , {kOrange+7 , kOrange-9}} ) ;
+	colorMap.insert( {"QGSP_BERT" , {kGreen+2 , kGreen-9}} ) ;
+	colorMap.insert( {"FTFP_BERT_HP" , {kOrange+7 , kOrange-9}} ) ;
+	colorMap.insert( {"QGSP_BERT_HP" , {kGreen+2 , kGreen-9}} ) ;
+	colorMap.insert( {"FTFP_BERT_EMY" , {kOrange+7 , kOrange-9}} ) ;
+	colorMap.insert( {"QGSP_BERT_EMY" , {kGreen+2 , kGreen-9}} ) ;
+
+//	std::string g4Version = "9.6" ;
+	std::string g4Version = "10.4" ;
 	std::map<int , int> runMap ;
 	//	runMap.insert( std::make_pair(10 , 728348) ) ;
 	//	runMap.insert( std::make_pair(15 , 728350) ) ;
@@ -57,7 +149,9 @@ int main()
 	//		runMap.insert( std::make_pair(80 , 730847) ) ;
 
 
-	TFile* resultFile = new TFile("result96.root" , "RECREATE") ;
+	std::stringstream resFileName ;
+	resFileName << "result" << g4Version << ".root" ;
+	TFile* resultFile = new TFile(resFileName.str().c_str() , "RECREATE") ;
 	resultFile->cd() ;
 	TDirectory* histosDir = resultFile->mkdir("Histos") ;
 	TDirectory* graphsDir = resultFile->mkdir("Graphs") ;
@@ -81,7 +175,7 @@ int main()
 		eventList.setGeomCut( {{490,460,100}} ) ;
 
 		std::stringstream data ;
-//		data << "/home/garillot/files/Analysis/DATA/" << it->second << ".root" ;
+		//		data << "/home/garillot/files/Analysis/DATA/" << it->second << ".root" ;
 		data << "/home/garillot/files/DATA/Analysis/SPS_Oct2015/163/" << it->second << ".root" ;
 
 		unsigned long long beginTime = 5e6 ;
@@ -140,7 +234,7 @@ int main()
 		nHitErrMap.insert( std::make_pair(it->first , var) ) ;
 
 		timeCorr.correctHits(eventList , 2) ;
-//		timeCorr.correctProfiles(eventList , 1) ;
+		//		timeCorr.correctProfiles(eventList , 1) ;
 
 		std::stringstream toto ;
 		toto << "longiProfData" << it->first << "GeV" ;
@@ -232,7 +326,7 @@ int main()
 			//						sim << "/home/garillot/files/Analysis/range70/Geant4.9.6/" << *pIt << "/single_pi-_" << it->first << "GeV.root" ;
 
 			//			sim << "/home/garillot/files/Analysis/TBLike/Geant4.9.6/" << *pIt << "/single_pi-_" << it->first << "GeV.root" ;
-			sim << "/home/garillot/files/Analysis/TBLike/Geant4.9.6/" << *pIt << "/single_pi-_" << it->first << "GeV.root" ;
+			sim << "/home/garillot/files/TBLike/SPS_Oct2015/Analysis/Geant4." << g4Version << "/" << *pIt << "/pi-_" << it->first << "GeV_Digital.root" ;
 
 			eventList.loadFile( sim.str() ) ;
 
@@ -243,47 +337,15 @@ int main()
 
 			Color_t color ;
 			Color_t fillColor ;
-
-			if ( *pIt == "FTF_BIC" )
-			{
-				color = kMagenta+1 ;
-				fillColor = kMagenta-9 ;
-			}
-			else if ( *pIt == "FTFP_BERT" )
-			{
-				color = kOrange+7 ;
-				fillColor = kOrange-9 ;
-			}
-			else if ( *pIt == "QGSP_BERT" )
-			{
-				color = kGreen+2 ;
-				fillColor = kGreen-9 ;
-			}
-			else if ( *pIt == "FTFP_BERT_HP" )
-			{
-				color = kOrange+7 ;
-				fillColor = kOrange-9 ;
-			}
-			else if ( *pIt == "QGSP_BERT_HP" )
-			{
-				color = kGreen+2 ;
-				fillColor = kGreen-9 ;
-			}
-			else if ( *pIt == "FTFP_BERT_EMY" )
-			{
-				color = kOrange+7 ;
-				fillColor = kOrange-9 ;
-			}
-			else if ( *pIt == "QGSP_BERT_EMY" )
-			{
-				color = kGreen+2 ;
-				fillColor = kGreen-9 ;
-			}
-			else
+			auto col = colorMap.find(*pIt) ;
+			if ( col == colorMap.end() )
 			{
 				color = kBlack ;
 				fillColor = kBlack ;
 			}
+
+			color = col->second.color ;
+			fillColor = col->second.fillColor ;
 
 			histoCreator->setColor(color) ;
 			histoCreator->setFillColor(fillColor) ;
@@ -329,47 +391,7 @@ int main()
 		TDirectory* physDir = dir->mkdir( physicsListVec.at(i).c_str() ) ;
 		physDir->cd() ;
 
-		for ( std::map<int , TH1D*>::const_iterator it = nHitHistSimMap.at(i).begin() ; it != nHitHistSimMap.at(i).end() ; ++it )
-		{
-			std::cout << "Process nHit " << it->first << " GeV " << physicsListVec.at(i) << std::endl ;
-			std::stringstream toto ;
-			toto << it->first << "GeV" ;
-
-			auto histoSim = it->second ;
-			auto histoData = nHitHistDataMap[it->first] ;
-
-			DataMcCanvas* c = new DataMcCanvas( toto.str().c_str() ) ;
-
-			c->topPad()->cd() ;
-
-			double maxSim = histoSim->GetBinContent( histoSim->GetMaximumBin() ) ;
-			double maxData = histoData->GetBinContent( histoData->GetMaximumBin() ) ;
-
-			if ( maxSim > maxData )
-			{
-				histoSim->SetTitle(";nHit;") ;
-				histoSim->Draw() ;
-				histoData->Draw("p0 same") ;
-			}
-			else
-			{
-				histoData->SetTitle(";nHit;") ;
-				histoData->Draw("p0") ;
-				histoSim->Draw("same") ;
-				histoData->Draw("p0 same") ;
-			}
-
-			TLegend* leg = new TLegend(0.15,0.75,0.35,0.85) ;
-			leg->SetBorderSize(0) ;
-			leg->AddEntry(histoData , "SPS H2" , "ep" ) ;
-			leg->AddEntry(histoSim , physicsListVec.at(i).c_str() , "f" ) ;
-			leg->Draw() ;
-
-			c->topPad()->RedrawAxis() ;
-
-			c->Write() ;
-			c->Close() ;
-		}
+		writeHistos(nHitHistSimMap.at(i) , nHitHistDataMap , physicsListVec.at(i) , g4Version , ";nHit;") ;
 
 
 		TDirectory* dir2 = histosDir->GetDirectory("LongiProfile") ;
@@ -377,42 +399,7 @@ int main()
 		TDirectory* physDir2 = dir2->mkdir( physicsListVec.at(i).c_str() ) ;
 		physDir2->cd() ;
 
-		for ( std::map<int , TH1D*>::const_iterator it = longiProfHistSimMap.at(i).begin() ; it != longiProfHistSimMap.at(i).end() ; ++it )
-		{
-			std::cout << "Process LongiProfile " << it->first << " GeV " << physicsListVec.at(i) << std::endl ;
-			std::stringstream toto ;
-			toto << it->first << "GeV" ;
-			TCanvas* c1 = new TCanvas( toto.str().c_str() , toto.str().c_str() , 900 , 900 ) ;
-			c1->cd() ;
-			c1->SetTicks() ;
-			gStyle->SetOptStat(0) ;
-
-			double maxSim = it->second->GetBinContent( it->second->GetMaximumBin() ) ;
-			double maxData = longiProfHistDataMap[it->first]->GetBinContent( longiProfHistDataMap[it->first]->GetMaximumBin() ) ;
-
-			if ( maxSim > maxData )
-			{
-				it->second->Draw() ;
-				longiProfHistDataMap[it->first]->Draw("p same") ;
-			}
-			else
-			{
-				longiProfHistDataMap[it->first]->Draw("p") ;
-				it->second->Draw("same") ;
-				longiProfHistDataMap[it->first]->Draw("p same") ;
-			}
-
-			c1->RedrawAxis() ;
-
-			TLegend* leg = new TLegend(0.65,0.75,0.85,0.85) ;
-			leg->SetBorderSize(0) ;
-			leg->AddEntry(longiProfHistDataMap[it->first] , "SPS H2" , "ep" ) ;
-			leg->AddEntry(it->second , physicsListVec.at(i).c_str() , "f" ) ;
-			leg->Draw() ;
-
-			c1->Write() ;
-			c1->Close() ;
-		}
+		writeHistos(longiProfHistSimMap.at(i) , longiProfHistDataMap , physicsListVec.at(i) , g4Version , ";Layer;") ;
 
 
 		TDirectory* dir3 = histosDir->GetDirectory("RadiProfile") ;
@@ -420,43 +407,7 @@ int main()
 		TDirectory* physDir3 = dir3->mkdir( physicsListVec.at(i).c_str() ) ;
 		physDir3->cd() ;
 
-		for ( auto it = radiProfHistSimMap.at(i).cbegin() ; it != radiProfHistSimMap.at(i).cend() ; ++it )
-		{
-			std::cout << "Process RadiProfile " << it->first << " GeV " << physicsListVec.at(i) << std::endl ;
-			std::stringstream toto ;
-			toto << it->first << "GeV" ;
-			TCanvas* c1 = new TCanvas( toto.str().c_str() , toto.str().c_str() , 900 , 900 ) ;
-			c1->cd() ;
-			c1->SetTicks() ;
-			gStyle->SetOptStat(0) ;
-
-			double maxSim = it->second->GetBinContent( it->second->GetMaximumBin() ) ;
-			double maxData = radiProfHistDataMap[it->first]->GetBinContent( radiProfHistDataMap[it->first]->GetMaximumBin() ) ;
-
-			if ( maxSim > maxData )
-			{
-				it->second->Draw() ;
-				radiProfHistDataMap[it->first]->Draw("p same") ;
-			}
-			else
-			{
-				radiProfHistDataMap[it->first]->Draw("p") ;
-				it->second->Draw("same") ;
-				radiProfHistDataMap[it->first]->Draw("p same") ;
-			}
-
-			c1->RedrawAxis() ;
-
-			TLegend* leg = new TLegend(0.65,0.75,0.85,0.85) ;
-			leg->SetBorderSize(0) ;
-			leg->AddEntry(radiProfHistDataMap[it->first] , "SPS H2" , "p" ) ;
-			leg->AddEntry(it->second , physicsListVec.at(i).c_str() , "p" ) ;
-			leg->Draw() ;
-
-			c1->Write() ;
-			c1->Close() ;
-		}
-
+		writeHistos(radiProfHistSimMap.at(i) , radiProfHistDataMap , physicsListVec.at(i) , g4Version , ";Distance from shower axis (cm);") ;
 	}
 
 
@@ -545,22 +496,11 @@ int main()
 	for ( unsigned int i = 0 ; i < physicsListVec.size() ; ++i )
 	{
 		Color_t color ;
-		if ( physicsListVec.at(i) == "FTF_BIC" )
-			color = kMagenta+1 ;
-		else if ( physicsListVec.at(i) == "FTFP_BERT" )
-			color = kOrange+7 ;
-		else if ( physicsListVec.at(i) == "QGSP_BERT" )
-			color = kGreen+2 ;
-		else if ( physicsListVec.at(i) == "FTFP_BERT_HP" )
-			color = kOrange+7 ;
-		else if ( physicsListVec.at(i) == "QGSP_BERT_HP" )
-			color = kGreen+2 ;
-		else if ( physicsListVec.at(i) == "FTFP_BERT_EMY" )
-			color = kOrange+7 ;
-		else if ( physicsListVec.at(i) == "QGSP_BERT_EMY" )
-			color = kGreen+2 ;
-		else
+		auto col = colorMap.find( physicsListVec.at(i) ) ;
+		if ( col == colorMap.end() )
 			color = kBlack ;
+
+		color = col->second.color ;
 
 		for ( std::map<int , TH1D*>::const_iterator it = nHitHistSimMap.at(i).begin() ; it != nHitHistSimMap.at(i).end() ; ++it )
 		{
