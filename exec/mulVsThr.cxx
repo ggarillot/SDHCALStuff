@@ -52,7 +52,8 @@ int main(int , char**)
 		int run = runs.at(i) ;
 
 
-		std::stringstream toto ; toto << "/home/garillot/files/MultiplicityMap/DATA/thrScan/Eff_" << run << ".root" ;
+		std::stringstream toto ; toto << "/home/guillaume/files/MultiplicityMap/DATA/thrScan/Eff_" << run << ".root" ;
+		std::cout << "Process " << toto.str() << std::endl ;
 		TFile* dataFile = new TFile(toto.str().c_str() , "READ") ;
 		TTree* tree = dynamic_cast<TTree*>( dataFile->Get("tree") ) ;
 
@@ -88,7 +89,7 @@ int main(int , char**)
 	}
 
 
-	TFile* mcFile = TFile::Open("/home/garillot/SDHCALMarlinProcessor/Eff_mu-_50GeV_Analog.root" , "READ") ;
+	TFile* mcFile = TFile::Open("/home/guillaume/files/MultiplicityMap/Centered/Geant4.10.04/QGSP_BERT/Eff_mu-_100GeV_Analog.root" , "READ") ;
 
 	assert( mcFile ) ;
 	TTree* tree = dynamic_cast<TTree*>( mcFile->Get("tree") ) ;
@@ -117,29 +118,14 @@ int main(int , char**)
 
 	mcFile->Close() ;
 
-
 	assert( mulDataGraph->GetN() == mulMCGraph->GetN() ) ;
 
 
-
-
-	TGraphErrors* devGraph = new TGraphErrors ;
-	devGraph->SetMarkerColor(kRed-4) ;
-	devGraph->SetLineColor(kRed-4) ;
-	devGraph->SetMarkerStyle(20) ;
-
-	double x , yD , yM ;
-	for ( int i = 0 ; i < mulDataGraph->GetN() ; ++i )
-	{
-		mulMCGraph->GetPoint(i,x,yM) ;
-		mulDataGraph->GetPoint(i,x,yD) ;
-		devGraph->SetPoint(i , x , yM/yD ) ;
-	}
-
 	file->cd()  ;
-	DataMcCanvas* canv = new DataMcCanvas{ "test" , {0.1,30} , {1,2} , {0.85,1.15} , "threshold(pC)" , "multiplicity" } ;
 
+	DataMcCanvas* canv = new DataMcCanvas{ "test" , {0.1,30} , {1,2} , "Threshold(pC)" , "Multiplicity" } ;
 	canv->topPad()->cd() ;
+	canv->topPad()->SetLogx() ;
 
 	mulDataGraph->Draw("P same") ;
 	mulMCGraph->Draw("P same") ;
@@ -148,19 +134,12 @@ int main(int , char**)
 	TLegend* leg = new TLegend(0.2,0.2,0.4,0.3) ;
 	leg->SetBorderSize(0) ;
 
-	leg->AddEntry(mulDataGraph , "DATA" , "p") ;
+	TLegendEntry* dataLeg = leg->AddEntry(mulDataGraph , "DATA" , "p") ;
 	TLegendEntry* mcLeg = leg->AddEntry(mulMCGraph , "MC" , "p") ;
+	dataLeg->SetTextFont(62) ;
+	mcLeg->SetTextFont(62) ;
 	mcLeg->SetTextColor(kRed-4) ;
 	leg->Draw() ;
-
-	canv->bottomPad()->cd() ;
-
-	TLine* refLine = new TLine{0,1,1,1} ;
-	refLine->SetLineColor(kBlack) ;
-	refLine->SetLineWidth(2) ;
-	refLine->Draw() ;
-
-	devGraph->Draw("P same") ;
 
 	canv->Write() ;
 	file->Close() ;

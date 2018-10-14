@@ -67,9 +67,37 @@ DataMcCanvas::DataMcCanvas(std::string name , std::string xName , std::string yN
 	_topPad->Draw() ;
 	_topPad->SetTopMargin(0.05f) ;
 	_topPad->SetRightMargin(0.05f) ;
+}
 
-//	_topPad->SetTopMargin(0.044f) ;
-//	_topPad->SetBottomMargin(0.084f) ;
-//	_topPad->SetLeftMargin(0.084f) ;
-//	_topPad->SetRightMargin(0.044f) ;
+DataMcCanvas::DataMcCanvas(std::string name , std::pair<double, double> xAxis , std::pair<double, double> yAxis , std::string xName , std::string yName)
+	: TCanvas(name.c_str() , name.c_str() , 1000 , 1000) ,
+	  _name( name )
+{
+	gStyle->SetOptStat(0) ;
+	cd() ;
+
+	std::string topPadName = name + "top" ;
+
+	_topPad = new TPad(topPadName.c_str() , topPadName.c_str() , 0 , 0 , 1.0 , 1.0) ;
+	_topPad->SetTicks() ;
+	_topPad->Draw() ;
+	_topPad->SetTopMargin(0.05f) ;
+	_topPad->SetRightMargin(0.05f) ;
+
+	std::string t = ";" + xName + ";" + yName ;
+	_topPad->cd() ;
+	_topRange = new TH2D(topPadName.c_str(), t.c_str() , 1 , xAxis.first , xAxis.second , 1 , yAxis.first , yAxis.second) ;
+	//	_topRange->GetXaxis()->SetLabelSize(0) ;
+	//	_topRange->GetYaxis()->SetTitleOffset(1.55f) ;
+
+	_topRange->GetXaxis()->SetLabelSize(0.025f) ;
+	_topRange->GetYaxis()->SetLabelSize(0.025f) ;
+
+	_topRange->GetYaxis()->SetTitleOffset(1.35f) ;
+
+	_topRange->GetXaxis()->SetTitleFont(62) ;
+	_topRange->GetYaxis()->SetTitleFont(62) ;
+
+
+	_topRange->Draw() ;
 }
